@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light theme */
+:root {
+  --bg: 247 248 252;
+  --panel: 255 255 255;
+  --card: 255 255 255;
+  --line: 226 229 240;
+  --fg: 17 20 38;
+  --muted: 100 106 130;
+  --accent: 124 92 255;
+  --accent2: 37 132 255;
+  --ok: 22 163 74;
+  --warn: 217 119 6;
+  --bad: 220 38 38;
+  color-scheme: light;
+}
+
+/* Dark theme (default) */
+.dark {
+  --bg: 9 11 22;
+  --panel: 14 17 32;
+  --card: 19 23 41;
+  --line: 36 41 66;
+  --fg: 234 236 248;
+  --muted: 142 148 178;
+  --accent: 139 112 255;
+  --accent2: 56 152 255;
+  --ok: 52 211 153;
+  --warn: 251 191 36;
+  --bad: 248 113 113;
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+:root { --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+html { font-family: var(--font-sans); }
+body {
+  @apply bg-bg text-fg antialiased font-sans;
+  font-feature-settings: "cv11", "ss01";
+}
+
+.bg-grid {
+  background-image: radial-gradient(rgb(var(--line)) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+.text-gradient {
+  @apply bg-clip-text text-transparent;
+  background-image: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent2)));
+}
+.glass { @apply bg-panel/80 backdrop-blur-xl; }
+
+/* Scrollbars */
+* { scrollbar-width: thin; scrollbar-color: rgb(var(--line)) transparent; }
+
+/* React Flow theming */
+.react-flow {
+  --xy-background-color: transparent;
+  --xy-minimap-background-color: rgb(var(--card));
+  --xy-minimap-mask-background-color: rgb(var(--bg) / 0.55);
+  --xy-controls-button-background-color: rgb(var(--card));
+  --xy-controls-button-background-color-hover: rgb(var(--line));
+  --xy-controls-button-color: rgb(var(--fg));
+  --xy-controls-button-border-color: rgb(var(--line));
+  --xy-edge-label-background-color: rgb(var(--card));
+  --xy-edge-label-color: rgb(var(--fg));
+}
+.react-flow__edge-path { stroke: rgb(var(--muted) / 0.6); stroke-width: 2; }
+.react-flow__edge.selected .react-flow__edge-path, .react-flow__edge:hover .react-flow__edge-path { stroke: rgb(var(--accent)); }
+.react-flow__handle { width: 12px; height: 12px; border: 2px solid rgb(var(--panel)); background: rgb(var(--muted)); }
+.react-flow__handle:hover { background: rgb(var(--accent)); }
+.react-flow__controls { @apply shadow-soft rounded-xl overflow-hidden border border-line; }
+.react-flow__controls-button { background: rgb(var(--card)); border-bottom: 1px solid rgb(var(--line)); fill: rgb(var(--fg)); color: rgb(var(--fg)); }
+.react-flow__controls-button:hover { background: rgb(var(--line)); }
+.react-flow__minimap { background: rgb(var(--card)); @apply rounded-xl border border-line overflow-hidden; }
+.react-flow__attribution { display: none; }
+.react-flow__edge-textbg { fill: rgb(var(--card)); }
+.react-flow__edge-text { fill: rgb(var(--fg)); font-size: 11px; font-weight: 600; }
+
+@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(var(--accent) / .5);} 100% { box-shadow: 0 0 0 12px rgb(var(--accent) / 0);} }
+.pulse-ring { animation: pulse-ring 1.4s ease-out infinite; }

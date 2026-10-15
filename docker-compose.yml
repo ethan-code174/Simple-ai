@@ -1,0 +1,48 @@
+# Local stack: Postgres + FastAPI + Next.js + Ollama (free local AI). No accounts or API keys needed.
+#   docker compose up --build
+#   docker compose exec ollama ollama pull llama3.2      # one-time model download (~2 GB)
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: aif
+      POSTGRES_PASSWORD: aif
+      POSTGRES_DB: aif
+    volumes: [db:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aif"]
+      interval: 3s
+      retries: 20
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes: [ollama:/root/.ollama]
+    ports: ["11434:11434"]
+
+  backend:
+    build: ./backend
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      AIF_DATABASE_URL: postgresql+psycopg://aif:aif@db:5432/aif
+      AIF_OLLAMA_BASE_URL: http://ollama:11434
+      AIF_UPLOAD_DIR: /data/uploads
+    volumes: [uploads:/data/uploads]
+    depends_on:
+      db: { condition: service_healthy }
+    ports: ["8000:8000"]
+
+  frontend:
+    build:
+      context: ./frontend
+      args: { BACKEND_URL: "http://backend:8000" }
+    environment:
+      BACKEND_URL: http://backend:8000
+    depends_on: [backend]
+    ports: ["3000:3000"]
+
+volumes:
+  db:
+  ollama:
+  uploads:
