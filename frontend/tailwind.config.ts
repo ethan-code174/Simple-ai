@@ -19,10 +19,11 @@ export default {
         bad: "rgb(var(--bad) / <alpha-value>)",
       },
       fontFamily: { sans: ["var(--font-sans)", "ui-sans-serif", "system-ui"] },
-      borderRadius: { xl: "0.9rem", "2xl": "1.2rem" },
+      // Small, consistent corners and flat surfaces: thin borders do the work, not shadows.
+      borderRadius: { md: "5px", lg: "6px", xl: "8px", "2xl": "8px", "3xl": "10px" },
       boxShadow: {
-        glow: "0 0 0 1px rgb(var(--accent) / 0.35), 0 8px 30px -8px rgb(var(--accent) / 0.45)",
-        soft: "0 1px 2px rgb(0 0 0 / 0.2), 0 8px 24px -12px rgb(0 0 0 / 0.5)",
+        glow: "none",
+        soft: "0 1px 2px rgb(0 0 0 / 0.06)",
       },
     },
   },

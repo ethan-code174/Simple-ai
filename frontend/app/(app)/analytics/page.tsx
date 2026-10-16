@@ -38,7 +38,7 @@ export default function AnalyticsPage() {
               <div className="flex h-44 items-end gap-1.5" role="img" aria-label="Runs per day bar chart">
                 {data.series.map((s) => (
                   <div key={s.date} className="group relative flex flex-1 flex-col items-center justify-end" title={`${s.date}: ${s.executions} runs, ${s.failed} failed`}>
-                    <div className="w-full rounded-t-md bg-gradient-to-t from-accent/70 to-accent2/70 transition group-hover:brightness-125" style={{ height: `${(s.executions / max) * 100}%`, minHeight: s.executions ? 4 : 0 }} />
+                    <div className="w-full rounded-t-md bg-accent/70 transition-colors group-hover:bg-accent" style={{ height: `${(s.executions / max) * 100}%`, minHeight: s.executions ? 4 : 0 }} />
                     <span className="mt-1 text-[10px] text-muted">{s.date.slice(8)}</span>
                   </div>
                 ))}

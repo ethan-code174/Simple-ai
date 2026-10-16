@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useEffect, useRef, useState } from "react";
-import { FileText, Send, Sparkles } from "lucide-react";
+import { FileText, Send } from "lucide-react";
 import { api } from "@/lib/api";
 
 type Info = { slug: string; name: string; description: string; welcome_message: string; avatar_emoji: string; accent_color: string };
@@ -60,7 +60,7 @@ export default function PublicChat({ params }: { params: Promise<{ slug: string 
 
   return (
     <div className="flex h-screen flex-col bg-bg">
-      <header className="border-b border-line bg-panel/80 backdrop-blur">
+      <header className="border-b border-line bg-panel">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
           <span className="grid h-10 w-10 place-items-center rounded-full text-xl" style={{ background: `${accent}22` }}>{info.avatar_emoji}</span>
           <div className="min-w-0"><h1 className="truncate font-semibold">{info.name}</h1>{info.description && <p className="truncate text-xs text-muted">{info.description}</p>}</div>
@@ -83,7 +83,7 @@ export default function PublicChat({ params }: { params: Promise<{ slug: string 
           <input aria-label="Your message" value={input} onChange={(e) => setInput(e.target.value)} maxLength={2000} placeholder="Type your message…" className="h-11 flex-1 rounded-xl border border-line bg-bg px-4 text-sm focus:outline-none" style={{ borderColor: input ? accent : undefined }} />
           <button disabled={busy || !input.trim()} className="grid h-11 w-11 place-items-center rounded-xl text-white disabled:opacity-50" style={{ background: accent }} aria-label="Send"><Send className="h-4 w-4" /></button>
         </form>
-        <p className="pb-2 text-center text-[11px] text-muted"><Sparkles className="mr-1 inline h-3 w-3" />Made with AI Factory · AI can make mistakes</p>
+        <p className="pb-2 text-center text-[11px] text-muted">Made with AI Factory · AI can make mistakes</p>
       </footer>
     </div>
   );

@@ -4,53 +4,48 @@
 
 /* Light theme */
 :root {
-  --bg: 247 248 252;
-  --panel: 255 255 255;
+  --bg: 246 246 244;
+  --panel: 251 251 250;
   --card: 255 255 255;
-  --line: 226 229 240;
-  --fg: 17 20 38;
-  --muted: 100 106 130;
-  --accent: 124 92 255;
-  --accent2: 37 132 255;
-  --ok: 22 163 74;
-  --warn: 217 119 6;
-  --bad: 220 38 38;
+  --line: 222 222 218;
+  --fg: 28 28 26;
+  --muted: 104 104 99;
+  --accent: 15 110 100;
+  --accent2: 15 110 100;
+  --ok: 34 128 74;
+  --warn: 176 110 20;
+  --bad: 190 50 45;
   color-scheme: light;
 }
 
 /* Dark theme (default) */
 .dark {
-  --bg: 9 11 22;
-  --panel: 14 17 32;
-  --card: 19 23 41;
-  --line: 36 41 66;
-  --fg: 234 236 248;
-  --muted: 142 148 178;
-  --accent: 139 112 255;
-  --accent2: 56 152 255;
-  --ok: 52 211 153;
-  --warn: 251 191 36;
-  --bad: 248 113 113;
+  --bg: 22 22 21;
+  --panel: 28 28 27;
+  --card: 33 33 32;
+  --line: 52 52 50;
+  --fg: 232 232 228;
+  --muted: 150 150 144;
+  --accent: 72 178 160;
+  --accent2: 72 178 160;
+  --ok: 92 184 122;
+  --warn: 220 168 80;
+  --bad: 226 110 100;
   color-scheme: dark;
 }
 
 html, body { height: 100%; }
-:root { --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+:root { --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 html { font-family: var(--font-sans); }
 body {
   @apply bg-bg text-fg antialiased font-sans;
-  font-feature-settings: "cv11", "ss01";
 }
 
 .bg-grid {
   background-image: radial-gradient(rgb(var(--line)) 1px, transparent 1px);
   background-size: 22px 22px;
 }
-.text-gradient {
-  @apply bg-clip-text text-transparent;
-  background-image: linear-gradient(90deg, rgb(var(--accent)), rgb(var(--accent2)));
-}
-.glass { @apply bg-panel/80 backdrop-blur-xl; }
+.glass { @apply bg-panel; }
 
 /* Scrollbars */
 * { scrollbar-width: thin; scrollbar-color: rgb(var(--line)) transparent; }
@@ -67,17 +62,26 @@ body {
   --xy-edge-label-background-color: rgb(var(--card));
   --xy-edge-label-color: rgb(var(--fg));
 }
-.react-flow__edge-path { stroke: rgb(var(--muted) / 0.6); stroke-width: 2; }
-.react-flow__edge.selected .react-flow__edge-path, .react-flow__edge:hover .react-flow__edge-path { stroke: rgb(var(--accent)); }
-.react-flow__handle { width: 12px; height: 12px; border: 2px solid rgb(var(--panel)); background: rgb(var(--muted)); }
-.react-flow__handle:hover { background: rgb(var(--accent)); }
-.react-flow__controls { @apply shadow-soft rounded-xl overflow-hidden border border-line; }
+.react-flow__edge-path { stroke: rgb(var(--muted) / 0.7); stroke-width: 1.5; }
+.react-flow__edge:hover .react-flow__edge-path { stroke: rgb(var(--fg) / 0.7); }
+.react-flow__edge.selected .react-flow__edge-path { stroke: rgb(var(--accent)); stroke-width: 2.5; }
+/* Grab points at both ends of a line: shown on hover or when selected. Drag one onto another block to re-route. */
+.react-flow__edgeupdater { fill: transparent; stroke: transparent; stroke-width: 2; cursor: grab; }
+.react-flow__edge:hover .react-flow__edgeupdater { fill: rgb(var(--card)); stroke: rgb(var(--fg) / 0.6); }
+.react-flow__edge.selected .react-flow__edgeupdater { fill: rgb(var(--card)); stroke: rgb(var(--accent)); }
+.react-flow__handle { width: 14px; height: 14px; border: 2px solid rgb(var(--card)); background: rgb(var(--muted)); border-radius: 3px; transition: transform .12s, background .12s; }
+.react-flow__node:hover .react-flow__handle, .react-flow__node.selected .react-flow__handle { background: rgb(var(--accent)); }
+.react-flow__handle:hover, .react-flow__handle.connectingto { transform: translate(-50%, -50%) scale(1.35); }
+.react-flow__handle.valid { background: rgb(var(--ok)); }
+.react-flow__controls { @apply rounded-md overflow-hidden border border-line shadow-none; }
 .react-flow__controls-button { background: rgb(var(--card)); border-bottom: 1px solid rgb(var(--line)); fill: rgb(var(--fg)); color: rgb(var(--fg)); }
 .react-flow__controls-button:hover { background: rgb(var(--line)); }
-.react-flow__minimap { background: rgb(var(--card)); @apply rounded-xl border border-line overflow-hidden; }
+.react-flow__minimap { background: rgb(var(--card)); @apply rounded-md border border-line overflow-hidden; }
 .react-flow__attribution { display: none; }
 .react-flow__edge-textbg { fill: rgb(var(--card)); }
 .react-flow__edge-text { fill: rgb(var(--fg)); font-size: 11px; font-weight: 600; }
 
-@keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgb(var(--accent) / .5);} 100% { box-shadow: 0 0 0 12px rgb(var(--accent) / 0);} }
-.pulse-ring { animation: pulse-ring 1.4s ease-out infinite; }
+@keyframes pulse-ring { 50% { opacity: .35; } }
+.pulse-ring { animation: pulse-ring 1.2s ease-in-out infinite; }
+.react-flow .react-flow__controls-button { width: 36px; height: 36px; padding: 0; }
+.react-flow .react-flow__controls-button svg { width: 15px; height: 15px; max-width: 15px; max-height: 15px; }

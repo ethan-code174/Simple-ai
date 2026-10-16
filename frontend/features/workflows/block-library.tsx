@@ -19,12 +19,12 @@ export function BlockLibrary({ blocks, onAdd }: { blocks: BlockDef[]; onAdd: (ty
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted" />
           <Input aria-label="Search blocks" className="pl-8" placeholder="Search blocks" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <p className="mt-2 text-[11px] text-muted">Drag a block onto the canvas, or click to add it.</p>
+        <p className="mt-2 text-[11px] text-muted">Drag a block onto the canvas, or click to add it. If a block is selected, or you drop onto a block, the new one is connected after it. You can also click + Next under any block.</p>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto px-3 pb-4">
         {cats.map((cat) => (
           <div key={cat}>
-            <div className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{cat}</div>
+            <div className="mb-1.5 px-1 text-xs font-medium text-muted">{cat}</div>
             <div className="space-y-1.5">
               {shown.filter((b) => b.category === cat).map((b) => {
                 const Icon = iconFor(b.icon);
@@ -35,9 +35,9 @@ export function BlockLibrary({ blocks, onAdd }: { blocks: BlockDef[]; onAdd: (ty
                     onDragStart={(e) => { e.dataTransfer.setData("application/aif-block", b.type); e.dataTransfer.effectAllowed = "move"; }}
                     onClick={() => onAdd(b.type)}
                     data-testid={`block-${b.type}`}
-                    className="flex w-full cursor-grab items-start gap-2.5 rounded-xl border border-line bg-card/70 p-2.5 text-left transition hover:border-accent/50 active:cursor-grabbing"
+                    className="flex w-full cursor-grab items-start gap-2.5 rounded-md border border-line bg-card p-2.5 text-left transition-colors hover:border-fg/30 active:cursor-grabbing"
                   >
-                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg" style={{ background: `${b.color}22`, color: b.color }}><Icon className="h-3.5 w-3.5" /></span>
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: b.color }} />
                     <span className="min-w-0">
                       <span className="block text-sm font-medium">{b.label}</span>
                       <span className="block text-[11px] leading-snug text-muted">{b.summary}</span>

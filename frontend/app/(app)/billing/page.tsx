@@ -34,7 +34,7 @@ export default function BillingPage() {
           <CardHeader><CardTitle>{b.plan.name} plan</CardTitle><CardDescription>{b.plan.price_label}</CardDescription></CardHeader>
           <CardContent>
             <div className="flex justify-between text-sm"><span>Runs this month</span><span>{b.usage.executions} / {b.plan.monthly_executions.toLocaleString()}</span></div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-gradient-to-r from-accent to-accent2" style={{ width: `${pct}%` }} /></div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-line"><div className="h-full rounded-full bg-accent" style={{ width: `${pct}%` }} /></div>
             <p className="mt-4 text-sm text-muted">Estimated AI cost this month: <b className="text-fg">{money(b.usage.cost_usd)}</b> (local models are free)</p>
           </CardContent>
         </Card>
@@ -48,7 +48,7 @@ export default function BillingPage() {
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {b.plans.map((p) => (
-          <Card key={p.id} className={`p-5 ${p.id === b.plan.id ? "border-accent/60 shadow-glow" : ""}`}>
+          <Card key={p.id} className={`p-5 ${p.id === b.plan.id ? "border-accent" : ""}`}>
             <div className="flex items-center justify-between"><h3 className="font-semibold">{p.name}</h3>{p.id === b.plan.id && <Badge tone="accent">Current</Badge>}</div>
             <p className="mt-1 text-lg font-semibold">{p.price_label}</p>
             <ul className="mt-4 space-y-1.5 text-sm text-muted">

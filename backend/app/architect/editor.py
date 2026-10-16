@@ -22,7 +22,8 @@ BLOCK_NAMES = {
 HELP = ("Here are things I can change: add human review for complicated questions, add or remove document search, "
         "make replies friendlier / more formal / shorter, reply in another language, add a rule (“always …” / "
         "“never …”), limit replies to N words, add a signature, show document sources, change creativity, switch "
-        "model, rename or remove a block.")
+        "model (or one agent's model, e.g. “switch the reviewer to qwen2.5”), add a reviewer / summarizer / "
+        "simplifier agent, rename or remove a block.")
 
 
 @dataclass
@@ -110,8 +111,64 @@ class _Editor:
         return True
 
 
+AGENT_ROLES = {
+    "reviewer": ("Reviewer agent", "You are a careful reviewer. Fix mistakes, remove anything made up, and keep "
+                 "the meaning. Reply with only the improved text.", "Check and improve this reply:\n\n{{%s}}"),
+    "summarizer": ("Summarizer agent", "You summarise text clearly and briefly. Reply with only the summary.",
+                   "Summarise this:\n\n{{%s}}"),
+    "simplifier": ("Simplifier agent", "You rewrite text so a 12-year-old can understand it. Reply with only the "
+                   "rewritten text.", "Rewrite this in simple words:\n\n{{%s}}"),
+}
+MODEL_NAME = r"((?:llama|qwen|mistral|phi|gemma|deepseek)[a-z0-9.:\-]*)"
+
+
+def _add_agent(ed: _Editor, text: str, low: str) -> bool:
+    """'Add a reviewer agent (using qwen2.5)' -> a new AI Model block after the last one, with its own job."""
+    if not re.search(r"\b(add|another|second|extra|new)\b.{0,40}\b(agent|ai|brain|model|step)\b", low) or \
+            re.search(r"\b(human|person|staff|manager)\b", low):
+        return False
+    kind = ("summarizer" if re.search(r"summar", low) else
+            "simplifier" if re.search(r"simpl|easier|plain", low) else
+            "reviewer" if re.search(r"review|check|proofread|edit|fact|improv|polish", low) else None)
+    if kind is None:
+        return False
+    models = ed.nodes_of("ai_model")
+    outputs = ed.nodes_of("output")
+    if not models or not outputs:
+        ed.summary.append("I couldn't find an AI Model and Output block to add the new agent between.")
+        return True
+    prev = models[-1]
+    src = prev["config"].get("output_variable", "ai_response")
+    label, role, task = AGENT_ROLES[kind]
+    used = {m["config"].get("output_variable") for m in models}
+    var, i = f"{kind}_response", 2
+    while var in used:
+        var, i = f"{kind}_response_{i}", i + 1
+    cfg = {"role": role, "task": task % src, "provider": prev["config"].get("provider", "ollama"),
+           "model": prev["config"].get("model", "llama3.2"), "temperature": 0.2, "use_knowledge": False,
+           "use_history": False, "output_variable": var}
+    mm = re.search(MODEL_NAME, low)
+    if mm:
+        cfg["provider"], cfg["model"] = "ollama", mm.group(1).rstrip(".")
+    node = ed.add_node("ai_model", label, cfg)
+    ed.insert_after(prev["id"], node)
+    for o in outputs:
+        if o["config"].get("content_source") == src:
+            o["config"]["content_source"] = var
+    for t in ed.nodes_of("text_transform"):
+        if t["config"].get("source") == src:
+            t["config"]["source"] = var
+    ed.summary.append(f"Add a **{label}** after **{prev.get('label') or 'AI Model'}**. It has its own job and runs on "
+                      f"**{cfg['model']}**, and its answer becomes the reply. You can pick a different model for it "
+                      "in its settings.")
+    return True
+
+
 def _intents(ed: _Editor, text: str) -> None:
     low = text.lower().strip()
+
+    if _add_agent(ed, text, low):
+        return
 
     # Human review / escalation
     if re.search(r"human|person|staff|manager|review|approv|escalat", low) and \
@@ -250,8 +307,12 @@ def _intents(ed: _Editor, text: str) -> None:
             o["config"]["include_sources"] = True
         ed.summary.append("Show document sources under each reply.")
 
-    # Creativity / model
-    for mdl in ed.nodes_of("ai_model"):
+    # Creativity / model. If the request names one AI block ("switch the reviewer agent to qwen2.5"),
+    # only that block changes; otherwise all of them do.
+    ai_nodes = ed.nodes_of("ai_model")
+    named = [n for n in ai_nodes if n.get("label") and (n["label"].lower() in low or
+                                                         n["label"].lower().removesuffix(" agent") in low.split())]
+    for mdl in named or ai_nodes:
         c = mdl["config"]
         tm = re.search(r"temperature\s*(?:to|of|=)?\s*([0-9.]+)", low)
         if tm:
@@ -267,7 +328,9 @@ def _intents(ed: _Editor, text: str) -> None:
             c["provider"], c["model"] = "quotes", "quote-finder"
             ed.summary.append("Switch the AI Model to **Document Quote Finder** (not AI: it quotes your documents).")
         else:
-            mm = re.search(r"\b(?:use|switch to|change (?:the )?model to)\s+(?:the\s+)?(?:model\s+)?([a-z0-9][a-z0-9.:\-]{1,40})(?:\s+model)?\b", low)
+            mm = re.search(r"\b(?:use|switch to|change (?:the )?model to)\s+(?:the\s+)?(?:model\s+)?([a-z0-9][a-z0-9.:\-]{1,40})(?:\s+model)?\b", low) \
+                or (named and re.search(r"\b(?:use|switch|change|set|run|move)\b.{0,40}?\b(?:to|on|with)\s+(?:the\s+)?"
+                                        + MODEL_NAME, low))
             if mm and mm.group(1) not in ("a", "the", "documents", "document", "knowledge", "my", "more", "less", "it") \
                     and re.search(r"llama|qwen|mistral|phi|gemma|deepseek|ollama|local", mm.group(1)):
                 name = mm.group(1)
@@ -275,7 +338,7 @@ def _intents(ed: _Editor, text: str) -> None:
                     c["provider"] = "ollama"
                 else:
                     c["provider"], c["model"] = "ollama", name
-                ed.summary.append(f"Switch the AI Model to **{c['model']}** running locally with Ollama.")
+                ed.summary.append(f"Switch **{mdl.get('label') or 'AI Model'}** to **{c['model']}** running locally with Ollama.")
 
     # Rename a block
     rm = re.search(r"rename (?:the\s+)?(.+?)\s+(?:block\s+)?to\s+[\"“']?(.+?)[\"”']?$", text, re.I)

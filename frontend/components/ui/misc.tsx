@@ -7,8 +7,8 @@ export function Spinner({ className }: { className?: string }) {
 export function EmptyState({ icon, title, text, action }: { icon: React.ReactNode; title: string; text: string; action?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-line px-6 py-14 text-center">
-      <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-accent/10 text-accent">{icon}</div>
-      <h3 className="font-semibold">{title}</h3>
+      <div className="mb-3 text-muted">{icon}</div>
+      <h3 className="font-medium">{title}</h3>
       <p className="mt-1 max-w-sm text-sm text-muted">{text}</p>
       {action && <div className="mt-5">{action}</div>}
     </div>
@@ -19,7 +19,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-xl font-semibold">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions}
@@ -31,7 +31,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, className }: {
   tabs: { id: T; label: React.ReactNode }[]; value: T; onChange: (v: T) => void; className?: string;
 }) {
   return (
-    <div className={cn("flex gap-1 rounded-lg bg-bg/60 p-1", className)} role="tablist">
+    <div className={cn("flex gap-0.5 rounded-md border border-line bg-bg p-0.5", className)} role="tablist">
       {tabs.map((t) => (
         <button
           key={t.id}
@@ -39,7 +39,7 @@ export function Tabs<T extends string>({ tabs, value, onChange, className }: {
           aria-selected={value === t.id}
           onClick={() => onChange(t.id)}
           className={cn("flex-1 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium transition",
-            value === t.id ? "bg-card text-fg shadow-sm" : "text-muted hover:text-fg")}
+            value === t.id ? "bg-card text-fg ring-1 ring-line" : "text-muted hover:text-fg")}
         >
           {t.label}
         </button>

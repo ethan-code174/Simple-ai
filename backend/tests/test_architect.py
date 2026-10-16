@@ -83,3 +83,22 @@ def test_all_templates_build_valid_workflows():
     for t in TEMPLATES:
         _, plan = build_template(t["id"], "ollama", "llama3.2")
         assert validate_workflow(plan.spec, provider_ids={"ollama"}).ok, t["id"]
+
+
+def test_edit_adds_a_second_agent_on_its_own_model():
+    spec = build_plan(PROMPTS[1]).spec
+    p = propose_edit(spec, "Add a reviewer agent that checks the answer using qwen2.5")
+    added = [c for c in p.changes if c["kind"] == "added"]
+    assert [c["type"] for c in added] == ["ai_model"]
+    assert not any(c["type"] == "human_approval" for c in added)
+    new = next(n for n in p.spec["nodes"] if n["id"] == added[0]["node_id"])
+    assert new["config"]["model"] == "qwen2.5" and "{{ai_response}}" in new["config"]["task"]
+    out = next(n for n in p.spec["nodes"] if n["type"] == "output")
+    assert out["config"]["content_source"] == new["config"]["output_variable"]
+    rep = validate_workflow(p.spec)
+    assert rep.ok and not [i for i in rep.issues if i.code == "shared_output_variable"]
+
+    # Switching the model of one named agent leaves the other alone
+    p2 = propose_edit(p.spec, "switch the reviewer to mistral")
+    models = {n["label"]: n["config"]["model"] for n in p2.spec["nodes"] if n["type"] == "ai_model"}
+    assert models["Reviewer agent"] == "mistral" and list(models.values()).count("mistral") == 1

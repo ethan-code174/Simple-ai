@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, FilePlus2, LayoutTemplate, Sparkles, Wand2 } from "lucide-react";
+import { ArrowRight, FilePlus2, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { api } from "@/lib/api";
@@ -55,17 +55,16 @@ function NewAgent() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      {welcome && <p className="mb-6 rounded-xl border border-accent/30 bg-accent/10 px-4 py-3 text-sm">Welcome to AI Factory! Start by describing the AI you'd like to build.</p>}
-      <div className="text-center">
-        <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-accent to-accent2 text-white shadow-glow"><Wand2 className="h-6 w-6" /></span>
-        <h1 className="mt-5 text-3xl font-semibold tracking-tight">What should your AI do?</h1>
+      {welcome && <p className="mb-6 rounded-md border border-line bg-card px-4 py-3 text-sm">Welcome. Start by describing the assistant you'd like to build.</p>}
+      <div>
+        <h1 className="text-2xl font-semibold">What should your assistant do?</h1>
         <p className="mt-2 text-muted">Describe it like you'd explain it to a new employee. The Architect will build it.</p>
       </div>
 
       <AnimatePresence mode="wait">
         {!building ? (
           <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="mt-8">
-            <div className="rounded-2xl border border-line bg-card p-2 shadow-soft focus-within:border-accent/60">
+            <div className="rounded-lg border border-line bg-card p-2 focus-within:border-accent">
               <Textarea
                 aria-label="Describe your AI"
                 autoFocus
@@ -77,7 +76,7 @@ function NewAgent() {
               />
               <div className="flex items-center justify-between px-2 pb-1">
                 <span className="text-xs text-muted">Ctrl + Enter to build</span>
-                <Button onClick={build} disabled={prompt.trim().length < 3}><Sparkles />Build my agent</Button>
+                <Button onClick={build} disabled={prompt.trim().length < 3}>Build it</Button>
               </div>
             </div>
             <p className="mb-2 mt-6 text-xs font-medium uppercase tracking-wider text-muted">Try an example</p>

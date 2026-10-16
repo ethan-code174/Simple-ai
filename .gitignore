@@ -10,3 +10,11 @@ node_modules/
 frontend/test-results/
 frontend/playwright-report/
 *.tsbuildinfo
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.log
+logs/
+.DS_Store
+Thumbs.db

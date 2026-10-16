@@ -60,7 +60,7 @@ export function TestChat({ agentId, onRun, beforeRun }: { agentId: string; onRun
           </div>
         )}
         {turns.map((t, i) => t.role === "user" ? (
-          <div key={i} className="flex justify-end"><div className="max-w-[75%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-sm text-white">{t.text}</div></div>
+          <div key={i} className="flex justify-end"><div className="max-w-[75%] rounded-lg bg-line/70 px-3 py-2 text-sm">{t.text}</div></div>
         ) : (
           <AssistantTurn key={i} run={t.run!} onDecide={decide} />
         ))}

@@ -38,11 +38,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           href={href}
           onClick={() => setOpen(false)}
           className={cn(
-            "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition",
-            active(href) ? "bg-accent/12 text-fg shadow-[inset_2px_0_0_rgb(var(--accent))]" : "text-muted hover:bg-line/40 hover:text-fg"
+            "group flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
+            active(href) ? "bg-line/60 text-fg" : "text-muted hover:bg-line/40 hover:text-fg"
           )}
         >
-          <Icon className={cn("h-4 w-4", active(href) ? "text-accent" : "text-muted group-hover:text-fg")} />
+          <Icon className={cn("h-4 w-4", active(href) ? "text-fg" : "text-muted group-hover:text-fg")} />
           {label}
         </Link>
       ))}
@@ -51,9 +51,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           {theme === "dark" ? "Light mode" : "Dark mode"}
         </button>
-        <div className="flex items-center gap-3 rounded-xl border border-line bg-card/60 p-2.5">
+        <div className="flex items-center gap-3 border-t border-line px-1 pt-3">
           <Link href="/settings" className="flex min-w-0 flex-1 items-center gap-3">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-accent/70 to-accent2/70 text-xs font-semibold text-white">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-line text-xs font-semibold text-fg">
               {(user?.display_name || user?.email || "?").slice(0, 1).toUpperCase()}
             </span>
             <span className="min-w-0">
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 border-r border-line bg-panel/60 lg:block">{nav}</aside>
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-line bg-panel lg:block">{nav}</aside>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />
@@ -79,7 +79,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-bg/80 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-bg px-4 lg:hidden">
           <Logo />
           <button onClick={() => setOpen((o) => !o)} aria-label="Menu" className="p-2">{open ? <X /> : <Menu />}</button>
         </header>

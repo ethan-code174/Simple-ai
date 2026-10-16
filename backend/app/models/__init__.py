@@ -95,7 +95,7 @@ class Publication(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     welcome_message: Mapped[str] = mapped_column(Text, default="Hi! How can I help you today?")
     avatar_emoji: Mapped[str] = mapped_column(String(16), default="🤖")
-    accent_color: Mapped[str] = mapped_column(String(16), default="#7c5cff")
+    accent_color: Mapped[str] = mapped_column(String(16), default="#3f8f84")
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     agent: Mapped[Agent] = relationship(back_populates="publication")
 

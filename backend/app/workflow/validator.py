@@ -208,9 +208,14 @@ def validate_workflow(raw: dict | WorkflowSpec, *, max_nodes: int = 50, max_edge
             if v not in avail:
                 issues.append(W("unknown_template_variable",
                                 f"{{{{{v}}}}} isn't created by any earlier block, so it will be empty.", node_id=nid))
-        if nodes[nid].type == "ai_model" and "system_prompt" not in avail:
+        if nodes[nid].type == "ai_model" and "system_prompt" not in avail and not rep.configs[nid].role.strip():
             issues.append(W("no_prompt", "There's no Prompt block before this AI Model, so it gets the raw message "
                             "with no instructions.", node_id=nid))
+
+    ai_vars = [rep.configs[n.id].output_variable for n in spec.nodes if n.type == "ai_model" and n.id in rep.configs]
+    for v in sorted({v for v in ai_vars if ai_vars.count(v) > 1}):
+        issues.append(W("shared_output_variable", f"Several AI Model blocks save their reply as “{v}”, so later ones "
+                        "overwrite earlier ones. Give each agent its own “Save reply as” name."))
 
     ai_nodes = sum(1 for n in spec.nodes if n.type == "ai_model")
     if ai_nodes > max_ai_calls:

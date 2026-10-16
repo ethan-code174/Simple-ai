@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Activity, Bot, CircleCheck, CircleX, Coins, Globe, Plus, Sparkles, UserCheck, Clock } from "lucide-react";
+import { Activity, Bot, CircleCheck, CircleX, Coins, Globe, Plus, UserCheck, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +67,7 @@ export default function Dashboard() {
       {t.agents === 0 ? (
         <div className="mt-8">
           <EmptyState
-            icon={<Sparkles className="h-6 w-6" />}
+            icon={<Bot className="h-6 w-6" />}
             title="Create your first AI agent"
             text="Describe what you want in plain English and The Architect will build it for you. It takes about a minute."
             action={<div className="flex gap-2"><Link href="/agents/new"><Button><Plus />Create agent</Button></Link><Link href="/templates"><Button variant="secondary">Use a template</Button></Link></div>}

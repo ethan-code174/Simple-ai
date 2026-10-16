@@ -17,7 +17,7 @@ export function PublishDialog({ open, onClose, agent, validation, beforePublish,
   beforePublish: () => Promise<void>; onUpdated: (a: AgentDetail) => void;
 }) {
   const pub = agent.publication;
-  const [form, setForm] = useState({ display_name: "", description: "", welcome_message: "", avatar_emoji: "🤖", accent_color: "#7c5cff", slug: "" });
+  const [form, setForm] = useState({ display_name: "", description: "", welcome_message: "", avatar_emoji: "🤖", accent_color: "#3f8f84", slug: "" });
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const toast = useToast();
@@ -26,7 +26,7 @@ export function PublishDialog({ open, onClose, agent, validation, beforePublish,
     setForm({
       display_name: pub?.display_name ?? agent.name, description: pub?.description ?? agent.description.slice(0, 1000),
       welcome_message: pub?.welcome_message ?? `Hi! I'm ${agent.name}. How can I help you today?`,
-      avatar_emoji: pub?.avatar_emoji ?? "🤖", accent_color: pub?.accent_color ?? "#7c5cff", slug: pub?.slug ?? "",
+      avatar_emoji: pub?.avatar_emoji ?? "🤖", accent_color: pub?.accent_color ?? "#3f8f84", slug: pub?.slug ?? "",
     });
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 

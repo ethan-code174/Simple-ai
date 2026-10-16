@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Check, Minus, Pencil, Plus, Send, Sparkles, X } from "lucide-react";
+import { AlertTriangle, Check, Minus, Pencil, Plus, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/misc";
 import { api } from "@/lib/api";
@@ -77,10 +77,10 @@ export function ArchitectChat({ agentId, getSpec, onApplied, intro }: {
         {msgs.map((m, i) => (
           <div key={i} className={m.role === "user" ? "flex justify-end" : ""}>
             {m.role === "user" ? (
-              <div className="max-w-[85%] rounded-2xl rounded-br-md bg-accent px-3.5 py-2 text-sm text-white">{m.text}</div>
+              <div className="max-w-[85%] rounded-lg bg-line/70 px-3 py-2 text-sm">{m.text}</div>
             ) : (
               <div className="flex gap-2.5">
-                <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-white"><Sparkles className="h-3.5 w-3.5" /></span>
+                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded bg-line text-[10px] font-semibold text-muted">A</span>
                 <div className="min-w-0 flex-1 text-sm text-fg/90">
                   <MarkdownLite text={m.text} />
                   {m.proposal && <ProposalCard p={m.proposal} status={m.status} onAccept={() => decide(i, true)} onDiscard={() => decide(i, false)} />}

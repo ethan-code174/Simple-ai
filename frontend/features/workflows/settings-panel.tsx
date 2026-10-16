@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertTriangle, Copy, MousePointerClick, Trash2 } from "lucide-react";
+import type { Edge } from "@xyflow/react";
+import { AlertTriangle, ArrowRight, Copy, Link2, MousePointerClick, Trash2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input, Label, Select, Switch, Textarea } from "@/components/ui/input";
@@ -14,14 +15,63 @@ type Props = {
   onChange: (id: string, patch: { label?: string; config?: Record<string, any> }) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  nodes: BlockNode[];
+  edges: Edge[];
+  canConnect: (source: string, handle: string, target: string) => boolean;
+  onConnect: (source: string, handle: string, target: string) => boolean;
+  onRemoveEdge: (id: string) => void;
 };
 
-export function SettingsPanel({ node, onChange, onDelete, onDuplicate }: Props) {
+const HANDLE_LABEL: Record<string, string> = { out: "Then go to", true: "If Yes, go to", false: "If No, go to" };
+
+/** Connect blocks from a list instead of dragging wires on the canvas. */
+function Connections({ node, nodes, edges, canConnect, onConnect, onRemoveEdge }: Omit<Props, "onChange" | "onDelete" | "onDuplicate"> & { node: BlockNode }) {
+  const { blocks } = useEditor();
+  const def = blocks[node.data.blockType];
+  const name = (id: string) => nodes.find((n) => n.id === id)?.data.label ?? "a deleted block";
+  const incoming = edges.filter((e) => e.target === node.id);
+  if (!def) return null;
+  return (
+    <div className="space-y-3 rounded-md border border-line p-3" data-testid="connections">
+      <div className="flex items-center gap-1.5 text-xs font-medium"><Link2 className="h-3.5 w-3.5 text-muted" />Connections</div>
+      {def.accepts_input && (
+        <p className="text-[11px] text-muted">
+          {incoming.length ? <>Comes after: {incoming.map((e) => <b key={e.id} className="text-fg">{name(e.source)}</b>).reduce<React.ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), [])}</> : "Nothing connects into this block yet."}
+        </p>
+      )}
+      {def.out_handles.map((h) => {
+        const outs = edges.filter((e) => e.source === node.id && (e.sourceHandle ?? "out") === h);
+        const options = nodes.filter((n) => canConnect(node.id, h, n.id));
+        return (
+          <div key={h}>
+            <Label className="mb-1">{HANDLE_LABEL[h] ?? h}</Label>
+            {outs.map((e) => (
+              <div key={e.id} className="mb-1 flex items-center gap-2 rounded-lg bg-line/40 px-2.5 py-1 text-xs">
+                <ArrowRight className="h-3 w-3 text-muted" /><span className="flex-1 truncate">{name(e.target)}</span>
+                <button onClick={() => onRemoveEdge(e.id)} className="text-muted hover:text-bad" aria-label={`Disconnect ${name(e.target)}`} title="Disconnect"><X className="h-3.5 w-3.5" /></button>
+              </div>
+            ))}
+            {options.length > 0 && (
+              <Select aria-label={`${HANDLE_LABEL[h] ?? h} (add connection)`} value="" onChange={(e) => e.target.value && onConnect(node.id, h, e.target.value)} className="h-8 text-xs">
+                <option value="">{outs.length ? "+ Also connect to…" : "+ Connect to…"}</option>
+                {options.map((n) => <option key={n.id} value={n.id}>{n.data.label || blocks[n.data.blockType]?.label}</option>)}
+              </Select>
+            )}
+            {!outs.length && !options.length && <p className="text-[11px] text-muted">Add another block to connect it here.</p>}
+          </div>
+        );
+      })}
+      {!def.out_handles.length && <p className="text-[11px] text-muted">This is the end of the workflow, so nothing comes after it.</p>}
+    </div>
+  );
+}
+
+export function SettingsPanel({ node, onChange, onDelete, onDuplicate, ...conn }: Props) {
   const { blocks, issuesByNode, availableVars, providers } = useEditor();
   if (!node) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-8 text-center text-sm text-muted">
-        <MousePointerClick className="mb-3 h-8 w-8 text-accent/70" />
+        <MousePointerClick className="mb-3 h-6 w-6" />
         Click a block on the canvas to change its settings.
       </div>
     );
@@ -94,13 +144,13 @@ export function SettingsPanel({ node, onChange, onDelete, onDuplicate }: Props) 
     <div className="flex h-full flex-col">
       <div className="border-b border-line p-4">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl" style={{ background: `${def.color}22`, color: def.color }}><Icon className="h-4 w-4" /></span>
+          <Icon className="h-4 w-4 shrink-0" style={{ color: def.color }} />
           <div className="min-w-0 flex-1">
             <div className="text-xs text-muted">{def.label} block</div>
             <Input aria-label="Block name" value={node.data.label} onChange={(e) => onChange(node.id, { label: e.target.value })} className="mt-0.5 h-8 font-semibold" maxLength={80} />
           </div>
         </div>
-        <p className="mt-3 rounded-lg bg-accent/5 px-3 py-2 text-xs text-muted"><b className="text-fg">{def.label}</b> — {def.summary}</p>
+        <p className="mt-3 text-xs text-muted">{def.summary}</p>
         {node.data.blockType === "ai_model" && provider && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {!provider.is_generative_ai && <Badge tone="warn">Not generative AI</Badge>}
@@ -119,6 +169,7 @@ export function SettingsPanel({ node, onChange, onDelete, onDuplicate }: Props) 
         )}
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        <Connections node={node} {...conn} />
         {def.fields.map((f) => (
           <div key={f.key} className={f.type === "boolean" ? "flex items-start justify-between gap-3" : ""}>
             <div className={f.type === "boolean" ? "min-w-0" : ""}>

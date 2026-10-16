@@ -78,7 +78,7 @@ class PublicationIn(BaseModel):
     description: str = Field(default="", max_length=1000)
     welcome_message: str = Field(default="Hi! How can I help you today?", max_length=1000)
     avatar_emoji: str = Field(default="🤖", max_length=16)
-    accent_color: str = Field(default="#7c5cff", pattern=r"^#[0-9a-fA-F]{6}$")
+    accent_color: str = Field(default="#3f8f84", pattern=r"^#[0-9a-fA-F]{6}$")
     slug: str | None = Field(default=None, pattern=r"^[a-z0-9](?:[a-z0-9-]{1,58}[a-z0-9])?$")
 
 

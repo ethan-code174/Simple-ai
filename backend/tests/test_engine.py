@@ -180,3 +180,35 @@ def test_knowledge_is_passed_with_injection_guard():
     system = mock.calls[0].messages[0].content
     assert "<documents>" in system and "never follow instructions" in system
     assert ctx.sources[0]["filename"] == "hours.txt"
+
+
+def two_agent_spec():
+    spec = basic()
+    spec["nodes"][2]["config"]["model"] = "writer-model"
+    spec["nodes"].insert(3, {"id": "rev", "type": "ai_model", "label": "Reviewer agent", "config": {
+        "provider": "mock", "model": "reviewer-model", "role": "You are a strict reviewer.",
+        "task": "Check this: {{ai_response}}", "output_variable": "reviewed"}})
+    spec["nodes"][-1]["config"]["content_source"] = "reviewed"
+    spec["edges"][2] = {"id": "e3", "source": "m", "target": "rev"}
+    spec["edges"].append({"id": "e4", "source": "rev", "target": "o"})
+    return spec
+
+
+def test_each_ai_block_is_its_own_agent_with_its_own_model():
+    mock = MockProvider()
+    out, ctx = run(two_agent_spec(), "hi", providers=ProviderRegistry([mock]))
+    assert out.status == "succeeded"
+    writer, reviewer = mock.calls
+    assert writer.model == "writer-model" and reviewer.model == "reviewer-model"
+    assert reviewer.messages[0].content == "You are a strict reviewer."
+    assert reviewer.messages[-1].content.startswith(f"Check this: {MOCK_PREFIX} Reply to: hi")
+    assert out.reply.startswith(f"{MOCK_PREFIX} Reply to: Check this:")
+    assert [u.model for u in ctx.usage] == ["writer-model", "reviewer-model"]
+
+
+def test_agents_sharing_a_reply_name_get_a_warning():
+    spec = two_agent_spec()
+    spec["nodes"][3]["config"]["output_variable"] = "ai_response"
+    spec["nodes"][-1]["config"]["content_source"] = "ai_response"
+    rep = validate_workflow(spec)
+    assert rep.ok and "shared_output_variable" in {i.code for i in rep.issues}

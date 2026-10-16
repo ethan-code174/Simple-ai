@@ -4,12 +4,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Background, BackgroundVariant, Controls, MiniMap, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState, useReactFlow,
-  type Connection, type Edge, type IsValidConnection,
+  type Connection, type Edge, type FinalConnectionState, type IsValidConnection,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import {
   AlertTriangle, ArrowLeft, BookOpen, ChevronDown, ChevronUp, CircleCheck, CloudOff, FlaskConical, Globe, History, LayoutGrid,
-  Loader2, Maximize, Redo2, Save, SlidersHorizontal, Sparkles, Undo2,
+  Loader2, Maximize, MessagesSquare, Redo2, Save, SlidersHorizontal, Undo2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,16 +21,19 @@ import { KnowledgePanel } from "@/features/knowledge/knowledge-panel";
 import { TestChat } from "@/features/playground/test-chat";
 import { api } from "@/lib/api";
 import { useTheme } from "@/lib/theme";
+import { iconFor } from "@/lib/icons";
 import { useToast } from "@/lib/toast";
 import { cn, ms } from "@/lib/utils";
 import type { AgentDetail, BlockDef, Execution, Issue, NodeLog, Provider, Validation, WorkflowSpec } from "@/types";
 import { BlockLibrary } from "./block-library";
 import { BlockNodeComponent } from "./block-node";
-import { flowEdge, flowToSpec, newId, reaches, specToFlow, type BlockNode } from "./convert";
+import { FlowEdge } from "./flow-edge";
+import { flowEdge, flowToSpec, freshConfig, newId, reaches, specToFlow, type BlockNode } from "./convert";
 import { EditorContext } from "./editor-context";
 import { SettingsPanel } from "./settings-panel";
 
 const nodeTypes = { block: BlockNodeComponent };
+const edgeTypes = { flow: FlowEdge };
 type RightTab = "block" | "architect" | "knowledge" | "tests" | "versions";
 type BottomTab = "test" | "log" | "problems";
 
@@ -62,6 +65,9 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
   const [versionsKey, setVersionsKey] = useState(0);
   const [intro, setIntro] = useState<string | null>(null);
   const [, setHistoryTick] = useState(0);
+  // Shown when a connection is dragged onto empty canvas: pick a block to add there, already connected.
+  // `beside`: opened from a block's + button, so the new block goes next to that block rather than at the pointer.
+  const [picker, setPicker] = useState<{ x: number; y: number; source: string; handle: string; beside?: boolean } | null>(null);
 
   const { theme } = useTheme();
   const selectedRef = useRef<string | null>(null);
@@ -179,23 +185,125 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
   // ---------------------------------------------------------------- editing operations
   const blockMap = useMemo(() => Object.fromEntries(blocks.map((b) => [b.type, b])), [blocks]);
 
-  const addBlock = useCallback((type: string, position?: { x: number; y: number }) => {
+  /** Why source --handle--> target can't be connected, or null if it can. `ignoreEdge` is the connection
+   *  being moved, which shouldn't count against its own new position. */
+  const connectionProblem = useCallback((source: string, handle: string, target: string, ignoreEdge?: string): string | null => {
+    if (source === target) return "A block can't connect to itself.";
+    const src = nodesRef.current.find((n) => n.id === source);
+    const tgt = nodesRef.current.find((n) => n.id === target);
+    if (!src || !tgt) return "That block no longer exists.";
+    if (!blockMap[tgt.data.blockType]?.accepts_input) return "Nothing can connect into an Input block. It's where messages start.";
+    if (!blockMap[src.data.blockType]?.out_handles.length) return "Output blocks are the end of the line and can't connect onward.";
+    if (!blockMap[src.data.blockType].out_handles.includes(handle)) return "That connector doesn't exist on this block.";
+    const others = edgesRef.current.filter((e) => e.id !== ignoreEdge);
+    if (others.some((e) => e.source === source && e.target === target && (e.sourceHandle ?? "out") === handle)) return "These two blocks are already connected.";
+    if (reaches(others, target, source)) return "That would connect the blocks in a loop. Workflows must flow in one direction.";
+    return null;
+  }, [blockMap]);
+  const canConnect = useCallback((source: string, handle: string, target: string) => !connectionProblem(source, handle, target), [connectionProblem]);
+
+  const connect = useCallback((source: string, handle: string, target: string) => {
+    if (!canConnect(source, handle, target)) return false;
+    commit(nodesRef.current, [...edgesRef.current, flowEdge(newId("e"), source, target, handle)]);
+    return true;
+  }, [canConnect, commit]);
+
+  /** Add a block. With `from`, it's connected after that block. Clicking a library block while a block is
+   *  selected places the new one to its right and connects them, so beginners rarely need to drag wires. */
+  const addBlock = useCallback((type: string, position?: { x: number; y: number }, from?: { source: string; handle: string }) => {
     const def = blockMap[type];
     if (!def) return;
     let pos = position;
+    let link = from;
+    const sel = nodesRef.current.find((n) => n.id === selectedRef.current);
+    if (!pos && !link && sel && def.accepts_input) {
+      const handles = blockMap[sel.data.blockType]?.out_handles ?? [];
+      if (handles.length) {
+        const free = handles.find((h) => !edgesRef.current.some((e) => e.source === sel.id && (e.sourceHandle ?? "out") === h));
+        link = { source: sel.id, handle: free ?? handles[0] };
+      }
+    }
+    if (!pos && link) {
+      const src = nodesRef.current.find((n) => n.id === link!.source);
+      if (src) {
+        const p = { x: src.position.x + 300, y: src.position.y };
+        while (nodesRef.current.some((n) => Math.abs(n.position.x - p.x) < 230 && Math.abs(n.position.y - p.y) < 120)) p.y += 140;
+        pos = p;
+      }
+    }
     if (!pos) {
       const el = document.querySelector(".react-flow");
       const r = el?.getBoundingClientRect();
       pos = rf.screenToFlowPosition({ x: (r?.left ?? 0) + (r?.width ?? 800) / 2 - 115, y: (r?.top ?? 0) + (r?.height ?? 600) / 2 - 50 });
     }
     const id = newId(type);
-    const node: BlockNode = { id, type: "block", position: pos, data: { blockType: type, label: def.label, config: { ...def.defaults } }, selected: true };
-    commit([...nodesRef.current.map((n) => ({ ...n, selected: false })), node], edgesRef.current);
+    const node: BlockNode = { id, type: "block", position: pos, data: { blockType: type, label: def.label, config: freshConfig(type, def.defaults, nodesRef.current) }, selected: true };
+    const linked = !!link && def.accepts_input;
+    const nextEdges = linked ? [...edgesRef.current, flowEdge(newId("e"), link!.source, id, link!.handle)] : edgesRef.current;
+    const srcLabel = linked ? nodesRef.current.find((n) => n.id === link!.source)?.data.label : null;
+    commit([...nodesRef.current.map((n) => ({ ...n, selected: false })), node], nextEdges);
+    selectedRef.current = id;
     setSelectedId(id);
     setRightTab("block");
-  }, [blockMap, commit, rf]);
+    if (linked) toast("ok", `Added ${def.label} and connected it after “${srcLabel}”`);
+  }, [blockMap, commit, rf, toast]);
 
-  const updateNode = useCallback((id: string, patch: { label?: string; config?: Record<string, any> }) => {
+  // Letting go of a dragged connection: over a block's body -> connect to it; on empty canvas -> block picker.
+  const onConnectEnd = useCallback((event: MouseEvent | TouchEvent, state: FinalConnectionState) => {
+    if (state.isValid || !state.fromNode || state.fromHandle?.type !== "source") return;
+    const pt = "changedTouches" in event ? event.changedTouches[0] : event;
+    const source = state.fromNode.id;
+    const handle = state.fromHandle.id ?? "out";
+    const target = document.elementFromPoint(pt.clientX, pt.clientY)?.closest(".react-flow__node")?.getAttribute("data-id");
+    if (target) {
+      const problem = target !== source && connectionProblem(source, handle, target);
+      if (problem) toast("error", problem);
+      else if (target !== source) connect(source, handle, target);
+      return;
+    }
+    if ((event.target as Element | null)?.closest?.(".react-flow__pane")) setPicker({ x: pt.clientX, y: pt.clientY, source, handle });
+  }, [connect, connectionProblem, toast]);
+
+  // ---------------------------------------------------------------- moving an existing connection
+  // Grab either end of a line and drop it on another block to re-route it; drop it on empty canvas to remove it.
+  const reconnecting = useRef<{ id: string; done: boolean } | null>(null);
+
+  const moveEdge = useCallback((old: Edge, source: string, handle: string, target: string) => {
+    const problem = connectionProblem(source, handle, target, old.id);
+    if (problem) { toast("error", problem); return; }
+    commit(nodesRef.current, edgesRef.current.map((e) => (e.id === old.id ? flowEdge(e.id, source, target, handle) : e)));
+  }, [commit, connectionProblem, toast]);
+
+  const onReconnectStart = useCallback((_: unknown, edge: Edge) => { reconnecting.current = { id: edge.id, done: false }; }, []);
+
+  const onReconnect = useCallback((old: Edge, c: Connection) => {
+    if (reconnecting.current) reconnecting.current.done = true;
+    moveEdge(old, c.source, c.sourceHandle ?? "out", c.target);
+  }, [moveEdge]);
+
+  const onReconnectEnd = useCallback((event: MouseEvent | TouchEvent, edge: Edge, _h: unknown, state: FinalConnectionState) => {
+    const r = reconnecting.current;
+    reconnecting.current = null;
+    if (!r || r.done) return;
+    // The end that stayed put is `fromNode`; the other end was dropped at the pointer.
+    const pt = "changedTouches" in event ? event.changedTouches[0] : event;
+    const over = document.elementFromPoint(pt.clientX, pt.clientY)?.closest(".react-flow__node")?.getAttribute("data-id");
+    const fixed = state.fromNode?.id;
+    const movingTarget = state.fromHandle?.type === "source";
+    if (over && fixed && over !== (movingTarget ? edge.target : edge.source)) {
+      if (movingTarget) moveEdge(edge, edge.source, edge.sourceHandle ?? "out", over);
+      else {
+        const outs = blockMap[nodesRef.current.find((n) => n.id === over)?.data.blockType ?? ""]?.out_handles ?? [];
+        const free = outs.find((h) => !edgesRef.current.some((e) => e.source === over && (e.sourceHandle ?? "out") === h));
+        moveEdge(edge, over, free ?? outs[0] ?? "out", edge.target);
+      }
+    } else if (!over) {
+      commit(nodesRef.current, edgesRef.current.filter((e) => e.id !== edge.id));
+      toast("ok", "Connection removed. Press Ctrl+Z to undo.");
+    }
+  }, [blockMap, commit, moveEdge, toast]);
+
+  const updateNode =useCallback((id: string, patch: { label?: string; config?: Record<string, any> }) => {
     commit(nodesRef.current.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...(patch.label !== undefined ? { label: patch.label } : {}), ...(patch.config ? { config: patch.config } : {}) } } : n)),
       edgesRef.current, `edit:${id}:${patch.label !== undefined ? "label" : Object.keys(patch.config ?? {}).join()}`);
   }, [commit]);
@@ -211,25 +319,22 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
     const src = nodesRef.current.find((n) => n.id === id);
     if (!src) return;
     const nid = newId(src.data.blockType);
-    const copy: BlockNode = { ...src, id: nid, selected: true, position: { x: src.position.x + 40, y: src.position.y + 60 }, data: { ...src.data, label: `${src.data.label} copy`.slice(0, 80), config: { ...src.data.config } } };
+    const config = src.data.blockType === "ai_model"
+      ? { ...src.data.config, output_variable: freshConfig("ai_model", {}, nodesRef.current).output_variable } : { ...src.data.config };
+    const copy: BlockNode = { ...src, id: nid, selected: true, position: { x: src.position.x + 40, y: src.position.y + 60 }, data: { ...src.data, label: `${src.data.label} copy`.slice(0, 80), config } };
     commit([...nodesRef.current.map((n) => ({ ...n, selected: false })), copy], edgesRef.current);
     setSelectedId(nid);
   }, [commit]);
 
-  const isValidConnection: IsValidConnection = useCallback((c) => {
-    if (!c.source || !c.target || c.source === c.target) return false;
-    const src = nodesRef.current.find((n) => n.id === c.source);
-    const tgt = nodesRef.current.find((n) => n.id === c.target);
-    if (!src || !tgt) return false;
-    if (!blockMap[tgt.data.blockType]?.accepts_input || !blockMap[src.data.blockType]?.out_handles.length) return false;
-    if (edgesRef.current.some((e) => e.source === c.source && e.target === c.target && (e.sourceHandle ?? "out") === (c.sourceHandle ?? "out"))) return false;
-    return !reaches(edgesRef.current, c.target, c.source); // would create a loop
-  }, [blockMap]);
+  const isValidConnection: IsValidConnection = useCallback(
+    (c) => !!c.source && !!c.target && !connectionProblem(c.source, c.sourceHandle ?? "out", c.target, reconnecting.current?.id),
+    [connectionProblem]);
 
-  const onConnect = useCallback((c: Connection) => {
-    if (!isValidConnection(c as any)) return;
-    commit(nodesRef.current, [...edgesRef.current, flowEdge(newId("e"), c.source!, c.target!, c.sourceHandle)]);
-  }, [commit, isValidConnection]);
+  const onConnect = useCallback((c: Connection) => { connect(c.source, c.sourceHandle ?? "out", c.target); }, [connect]);
+
+  const removeEdge = useCallback((id: string) => {
+    commit(nodesRef.current, edgesRef.current.filter((e) => e.id !== id));
+  }, [commit]);
 
   const autoLayout = async () => {
     try {
@@ -296,7 +401,8 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
     for (const l of lastRun?.logs ?? []) m[l.node_id] = l;
     return m;
   }, [lastRun]);
-  const ctx = useMemo(() => ({ blocks: blockMap, providers, issuesByNode, runByNode, availableVars: validation?.available_vars ?? {} }), [blockMap, providers, issuesByNode, runByNode, validation]);
+  const addAfter = useCallback((source: string, handle: string, at: { x: number; y: number }) => setPicker({ ...at, source, handle, beside: true }), []);
+  const ctx = useMemo(() => ({ blocks: blockMap, providers, issuesByNode, runByNode, availableVars: validation?.available_vars ?? {}, addAfter, removeEdge }), [blockMap, providers, issuesByNode, runByNode, validation, addAfter, removeEdge]);
   const selected = nodes.find((n) => n.id === selectedId) ?? null;
   const errorCount = validation?.issues.filter((i) => i.severity === "error").length ?? 0;
   const warnCount = validation?.issues.filter((i) => i.severity === "warning").length ?? 0;
@@ -312,25 +418,25 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
     <EditorContext.Provider value={ctx}>
       <div className="flex h-screen flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-panel/80 px-3 backdrop-blur">
-          <Link href="/agents"><Button variant="ghost" size="icon" aria-label="Back to agents"><ArrowLeft /></Button></Link>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-panel px-3">
+          <Link href="/agents"><Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" aria-label="Back to agents"><ArrowLeft /></Button></Link>
           <input aria-label="Agent name" defaultValue={agent.name} onBlur={(e) => renameAgent(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} className="w-56 truncate rounded-md bg-transparent px-2 py-1 font-semibold hover:bg-line/40 focus:bg-line/40 focus:outline-none" maxLength={120} />
           {agent.status === "published" ? <Badge tone="ok"><Globe className="h-3 w-3" />Live</Badge> : <Badge>Draft</Badge>}
           <span className="ml-1 flex items-center gap-1.5 text-xs text-muted" data-testid="save-state">
             {saveState === "saving" || saveState === "pending" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving…</> : saveState === "error" ? <><CloudOff className="h-3.5 w-3.5 text-bad" />Not saved</> : <><CircleCheck className="h-3.5 w-3.5 text-ok" />Saved</>}
           </span>
           <div className="ml-auto flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={undo} disabled={!hist.current.past.length} title="Undo (Ctrl+Z)" aria-label="Undo"><Undo2 /></Button>
-            <Button variant="ghost" size="icon" onClick={redo} disabled={!hist.current.future.length} title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><Redo2 /></Button>
-            <Button variant="ghost" size="icon" onClick={autoLayout} title="Tidy up layout" aria-label="Auto-layout"><LayoutGrid /></Button>
-            <Button variant="ghost" size="icon" onClick={() => rf.fitView({ padding: 0.2, duration: 300 })} title="Fit to screen (F)" aria-label="Fit to screen"><Maximize /></Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={undo} disabled={!hist.current.past.length} title="Undo (Ctrl+Z)" aria-label="Undo"><Undo2 /></Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={redo} disabled={!hist.current.future.length} title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><Redo2 /></Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={autoLayout} title="Tidy up layout" aria-label="Auto-layout"><LayoutGrid /></Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={() => rf.fitView({ padding: 0.2, duration: 300 })} title="Fit to screen (F)" aria-label="Fit to screen"><Maximize /></Button>
             <span className="mx-1 h-5 w-px bg-line" />
             <button onClick={() => { setBottomOpen(true); setBottomTab("problems"); }} className={cn("flex items-center gap-1 rounded-md px-2 py-1 text-xs", errorCount ? "text-bad" : warnCount ? "text-warn" : "text-ok")} data-testid="problems-badge">
               {errorCount ? <><AlertTriangle className="h-3.5 w-3.5" />{errorCount} problem{errorCount > 1 ? "s" : ""}</> : warnCount ? <><AlertTriangle className="h-3.5 w-3.5" />{warnCount} warning{warnCount > 1 ? "s" : ""}</> : <><CircleCheck className="h-3.5 w-3.5" />Ready to run</>}
             </button>
-            <Button variant="secondary" size="sm" onClick={saveVersion} title="Save a version (Ctrl+S)"><Save />Save version</Button>
-            <Button variant="secondary" size="sm" onClick={() => { setBottomOpen(true); setBottomTab("test"); }}><FlaskConical />Test</Button>
-            <Button size="sm" onClick={async () => { await flushSave(); setPublishOpen(true); }} data-testid="publish-open"><Globe />Publish</Button>
+            <Button variant="secondary" onClick={saveVersion} title="Save a version (Ctrl+S)"><Save />Save version</Button>
+            <Button variant="secondary" onClick={() => { setBottomOpen(true); setBottomTab("test"); }}><FlaskConical />Test</Button>
+            <Button onClick={async () => { await flushSave(); setPublishOpen(true); }} data-testid="publish-open"><Globe />Publish</Button>
           </div>
         </header>
 
@@ -346,15 +452,34 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
 
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="relative min-h-0 flex-1 bg-grid" onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; }}
-              onDrop={(e) => { e.preventDefault(); const t = e.dataTransfer.getData("application/aif-block"); if (t) addBlock(t, rf.screenToFlowPosition({ x: e.clientX - 115, y: e.clientY - 40 })); }}>
+              onDrop={(e) => {
+                e.preventDefault();
+                const t = e.dataTransfer.getData("application/aif-block");
+                if (!t) return;
+                // Dropped on top of an existing block -> place the new one after it, connected.
+                const onto = (e.target as Element).closest?.(".react-flow__node")?.getAttribute("data-id");
+                const outs = onto ? blockMap[nodesRef.current.find((n) => n.id === onto)?.data.blockType ?? ""]?.out_handles ?? [] : [];
+                if (onto && outs.length) {
+                  const free = outs.find((h) => !edgesRef.current.some((x) => x.source === onto && (x.sourceHandle ?? "out") === h));
+                  addBlock(t, undefined, { source: onto, handle: free ?? outs[0] });
+                } else addBlock(t, rf.screenToFlowPosition({ x: e.clientX - 115, y: e.clientY - 40 }));
+              }}>
               <ReactFlow
                 nodes={nodes}
                 edges={edges}
                 nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
+                onConnectEnd={onConnectEnd}
+                onReconnect={onReconnect}
+                onReconnectStart={onReconnectStart}
+                onReconnectEnd={onReconnectEnd}
+                reconnectRadius={12}
                 isValidConnection={isValidConnection}
+                connectionRadius={45}
+                onPaneClick={() => setPicker(null)}
                 onNodeDragStop={() => commit(nodesRef.current, edgesRef.current, "move")}
                 onSelectionChange={({ nodes: sel }) => {
                   const id = sel.length === 1 ? sel[0].id : null;
@@ -365,12 +490,16 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
                 minZoom={0.2}
                 maxZoom={2}
                 proOptions={{ hideAttribution: true }}
-                defaultEdgeOptions={{ type: "smoothstep" }}
+                defaultEdgeOptions={{ type: "flow", interactionWidth: 24 }}
               >
                 <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="rgb(var(--line))" />
                 <Controls showInteractive={false} position="bottom-left" />
                 <MiniMap pannable zoomable position="bottom-right" nodeColor={(n) => blockMap[(n.data as any)?.blockType]?.color ?? "#888"} />
               </ReactFlow>
+              {picker && (
+                <ConnectPicker blocks={blocks} at={picker} onClose={() => setPicker(null)}
+                  onPick={(type) => { const p = picker; setPicker(null); addBlock(type, p.beside ? undefined : rf.screenToFlowPosition({ x: p.x, y: p.y - 40 }), { source: p.source, handle: p.handle }); }} />
+              )}
               {nodes.length === 0 && (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-sm text-muted">
                   <div>Drag blocks here from the left, or ask The Architect to build something.</div>
@@ -399,22 +528,30 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
           </div>
 
           {/* Right panel */}
-          <aside className="flex w-[380px] shrink-0 flex-col border-l border-line bg-panel/50">
-            <div className="border-b border-line p-2">
-              <Tabs<RightTab> value={rightTab} onChange={setRightTab} tabs={[
-                { id: "block", label: <span className="flex items-center justify-center gap-1"><SlidersHorizontal className="h-3.5 w-3.5" />Block</span> },
-                { id: "architect", label: <span className="flex items-center justify-center gap-1"><Sparkles className="h-3.5 w-3.5" />Architect</span> },
-                { id: "knowledge", label: <span className="flex items-center justify-center gap-1"><BookOpen className="h-3.5 w-3.5" />Knowledge</span> },
-                { id: "tests", label: <span className="flex items-center justify-center gap-1"><FlaskConical className="h-3.5 w-3.5" />Tests</span> },
-                { id: "versions", label: <span className="flex items-center justify-center" title="Versions"><History className="h-3.5 w-3.5" /></span> },
-              ]} />
+          <aside className="flex w-[420px] shrink-0 flex-col border-l border-line bg-panel/50">
+            {/* Panel tabs: equal-width, full-row buttons with an icon above a readable label. */}
+            <div className="grid shrink-0 grid-cols-5 border-b border-line" role="tablist">
+              {([
+                ["block", "Block", SlidersHorizontal],
+                ["architect", "Architect", MessagesSquare],
+                ["knowledge", "Knowledge", BookOpen],
+                ["tests", "Tests", FlaskConical],
+                ["versions", "Versions", History],
+              ] as const).map(([id, label, Icon]) => (
+                <button key={id} role="tab" aria-selected={rightTab === id} onClick={() => setRightTab(id)}
+                  className={cn("flex h-16 flex-col items-center justify-center gap-1.5 border-b-2 text-[13px] font-medium transition-colors",
+                    rightTab === id ? "border-accent bg-card text-fg" : "border-transparent text-muted hover:bg-line/40 hover:text-fg")}>
+                  <Icon className="h-[18px] w-[18px]" />{label}
+                </button>
+              ))}
             </div>
             <div className="min-h-0 flex-1">
               <div className={rightTab === "architect" ? "h-full" : "hidden"}>
                 <ArchitectChat agentId={agentId} getSpec={getSpec} intro={intro ?? undefined} key={intro ?? "default"}
                   onApplied={(spec) => { const f = specToFlow(spec); commit(f.nodes, f.edges); setVersionsKey((k) => k + 1); setTimeout(() => rf.fitView({ padding: 0.2, duration: 400 }), 50); }} />
               </div>
-              {rightTab === "block" && <SettingsPanel node={selected} onChange={updateNode} onDelete={(id) => deleteNodes([id])} onDuplicate={duplicateNode} />}
+              {rightTab === "block" && <SettingsPanel node={selected} onChange={updateNode} onDelete={(id) => deleteNodes([id])} onDuplicate={duplicateNode}
+                nodes={nodes} edges={edges} canConnect={canConnect} onConnect={connect} onRemoveEdge={removeEdge} />}
               {rightTab === "knowledge" && <KnowledgePanel agentId={agentId} hasKnowledgeBlock={hasKnowledge} />}
               {rightTab === "tests" && <TestsPanel agentId={agentId} beforeRun={flushSave} />}
               {rightTab === "versions" && <VersionsPanel agentId={agentId} refreshKey={versionsKey} onRestore={restore} />}
@@ -425,6 +562,27 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
       <PublishDialog open={publishOpen} onClose={() => setPublishOpen(false)} agent={agent} validation={validation} beforePublish={flushSave}
         onUpdated={(a) => { setAgent(a); setVersionsKey((k) => k + 1); }} />
     </EditorContext.Provider>
+  );
+}
+
+function ConnectPicker({ blocks, at, onPick, onClose }: { blocks: BlockDef[]; at: { x: number; y: number }; onPick: (type: string) => void; onClose: () => void }) {
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", h);
+    return () => window.removeEventListener("keydown", h);
+  }, [onClose]);
+  return (
+    <div className="fixed z-50 w-56 rounded-md border border-line bg-card p-1 shadow-lg" style={{ left: Math.min(at.x, window.innerWidth - 250), top: Math.min(at.y, window.innerHeight - 340) }} data-testid="connect-picker">
+      <div className="px-2 pb-1 pt-1 text-[11px] text-muted">Add a connected block</div>
+      {blocks.filter((b) => b.accepts_input).map((b) => {
+        const Icon = iconFor(b.icon);
+        return (
+          <button key={b.type} onClick={() => onPick(b.type)} className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-line/50">
+            <Icon className="h-4 w-4 shrink-0" style={{ color: b.color }} />{b.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

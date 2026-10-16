@@ -33,10 +33,10 @@ export function AgentCard({ agent, onChange }: { agent: AgentSummary; onChange: 
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="group relative flex flex-col rounded-2xl border border-line bg-card p-5 shadow-soft transition hover:border-accent/40">
+      className="group relative flex flex-col rounded-lg border border-line bg-card p-4 transition-colors hover:border-fg/30">
       <div className="flex items-start justify-between gap-3">
-        <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-accent/20 to-accent2/20 text-accent">
-          <Bot className="h-5 w-5" />
+        <div className="grid h-8 w-8 place-items-center rounded-md border border-line text-muted">
+          <Bot className="h-4 w-4" />
         </div>
         <div className="flex items-center gap-2">
           {agent.status === "published" ? <Badge tone="ok"><Globe className="h-3 w-3" />Live</Badge> : <Badge>Draft</Badge>}

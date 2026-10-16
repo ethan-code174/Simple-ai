@@ -35,12 +35,12 @@ Honest checklist as of 2026-10-15. ✅ works and is tested · 🟡 works with a 
 | 🟡 | “Complicated question” detection | Deterministic stand-in: message longer than 40 words, or contains chosen keywords. Editable in the Condition block. |
 
 ## Visual editor
-✅ Drag from library, click to add, connect with validation (no loops, no input into Input, nothing out of Output), delete, duplicate, rename, move, zoom, pan, fit, auto-layout, undo/redo (incl. Architect changes), autosave, keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z/Ctrl+Y, Ctrl+S, Ctrl+D, Delete, F), error/warning indicators on blocks, Problems panel, plain-English description on every block, settings panel driven by the backend block registry.
+✅ Drag from library, click to add (auto-connects after the selected block), connect by dragging a wire (drop it on a block's body or on empty canvas to pick a new connected block) or from the Connections list in block settings, connect with validation (no loops, no input into Input, nothing out of Output), delete, duplicate, rename, move, zoom, pan, fit, auto-layout, undo/redo (incl. Architect changes), autosave, keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z/Ctrl+Y, Ctrl+S, Ctrl+D, Delete, F), error/warning indicators on blocks, Problems panel, plain-English description on every block, settings panel driven by the backend block registry.
 
 🟡 Desktop-first: the editor needs ~1100px width; other pages are responsive.
 
 ## Blocks (all have schema, validation and an execution handler)
-✅ Input · Prompt · AI Model · Condition (12 deterministic operators) · Output · Knowledge Search · Human Approval (pause/resume, approve/reject) · Text Transformation (10 operations)
+✅ Input · Prompt · AI Model (each one can be its own agent: own model, own job and own task, e.g. writer → reviewer on different models) · Condition (12 deterministic operators) · Output · Knowledge Search · Human Approval (pause/resume, approve/reject) · Text Transformation (10 operations)
 
 ## Execution engine
 ✅ Graph validation, cycle detection, config validation, variable-flow checks, deterministic order, branch execution, variable passing, structured friendly errors, node logs, per-run timeout, retries for transient provider errors, AI-call limit, usage + cost tracking, cancellation between blocks, run persistence, node/edge/concurrency/monthly-run/spend limits. No user code is ever executed; `{{templates}}` only substitute plain variable names.

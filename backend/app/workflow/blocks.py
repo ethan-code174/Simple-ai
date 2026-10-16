@@ -95,7 +95,7 @@ class InputConfig(_Cfg):
 
 
 class InputBlock(Block):
-    type, label, category, icon, color = "input", "Input", "Basics", "MessageSquare", "#38bdf8"
+    type, label, category, icon, color = "input", "Input", "Basics", "MessageSquare", "#5b84a8"
     summary = "Where your agent receives a message from a person."
     config_model = InputConfig
     accepts_input = False
@@ -134,7 +134,7 @@ class PromptConfig(_Cfg):
 
 
 class PromptBlock(Block):
-    type, label, category, icon, color = "prompt", "Prompt", "Basics", "ScrollText", "#a78bfa"
+    type, label, category, icon, color = "prompt", "Prompt", "Basics", "ScrollText", "#8a7f6e"
     summary = "The instructions that tell your AI how to behave."
     config_model = PromptConfig
     template_keys = ["system_prompt", "instructions", "user_prompt"]
@@ -170,6 +170,10 @@ class PromptBlock(Block):
 
 # ---------------------------------------------------------------- AI Model
 class AIModelConfig(_Cfg):
+    # Optional per-block agent: its own role and task, so several AI Model blocks can each act as a
+    # separate agent (e.g. a writer and a reviewer) on different models. Empty = use the Prompt block.
+    role: str = Field(default="", max_length=8000)
+    task: str = Field(default="", max_length=8000)
     provider: str = Field(default="ollama", max_length=40)
     model: str = Field(default="llama3.2", max_length=80)
     temperature: float = Field(default=0.4, ge=0.0, le=2.0)
@@ -180,12 +184,18 @@ class AIModelConfig(_Cfg):
 
 
 class AIModelBlock(Block):
-    type, label, category, icon, color = "ai_model", "AI Model", "AI", "BrainCircuit", "#7c5cff"
+    type, label, category, icon, color = "ai_model", "AI Model", "AI", "Cpu", "#3f8f84"
     summary = "This is the brain of your agent. It reads the instructions and writes a reply."
     config_model = AIModelConfig
+    template_keys = ["role", "task"]
     fields = [
-        field_def("provider", "Provider", "provider", "Where the AI runs. Local models are free and private."),
-        field_def("model", "Model", "model", "Which AI model to use."),
+        field_def("provider", "Provider", "provider", "Where this block's AI runs. Each AI Model block can use a different one."),
+        field_def("model", "Model", "model", "Which AI model this block uses. Pick a different one per block if you like."),
+        field_def("role", "This agent's job (optional)", "textarea",
+                  "Give this block its own personality, e.g. 'You are a strict proofreader.' "
+                  "Leave empty to use the Prompt block's instructions."),
+        field_def("task", "What this agent works on (optional)", "textarea",
+                  "E.g. 'Check this reply for mistakes: {{ai_response}}'. Leave empty to use the Prompt block's message."),
         field_def("temperature", "Creativity", "slider", "Low = focused and consistent. High = more creative.",
                   min=0, max=1.5, step=0.1),
         field_def("max_tokens", "Maximum reply length", "number", "Roughly 1 token ≈ ¾ of a word.", min=16, max=4096),
@@ -207,8 +217,14 @@ class AIModelBlock(Block):
             raise friendly("ai_call_limit", f"Limit is {ctx.limits.max_ai_calls} AI calls per run.", node_id=node_id)
         ctx.ai_calls += 1
 
-        system = ctx.vars.get("system_prompt", "You are a helpful assistant.")
-        user = ctx.vars.get("user_prompt") or ctx.vars.get("message") or ctx.vars.get("previous", "")
+        if cfg.role.strip():
+            system = render(cfg.role, ctx.vars)[0]
+        else:
+            system = ctx.vars.get("system_prompt", "You are a helpful assistant.")
+        if cfg.task.strip():
+            user = render(cfg.task, ctx.vars)[0]
+        else:
+            user = ctx.vars.get("user_prompt") or ctx.vars.get("message") or ctx.vars.get("previous", "")
         if cfg.use_knowledge and "knowledge" in ctx.vars:
             knowledge = ctx.vars["knowledge"].strip() or "No relevant information was found in the documents."
             system = f"{system}\n\n{DOC_GUARD}\n\n<documents>\n{knowledge}\n</documents>"
@@ -298,7 +314,7 @@ def evaluate_condition(value: str, operator: str, compare: str, case_sensitive: 
 
 
 class ConditionBlock(Block):
-    type, label, category, icon, color = "condition", "Condition", "Logic", "GitBranch", "#f59e0b"
+    type, label, category, icon, color = "condition", "Condition", "Logic", "GitBranch", "#b08a3e"
     summary = "Sends the conversation down one of two paths based on a simple rule."
     config_model = ConditionConfig
     out_handles = ["true", "false"]
@@ -352,7 +368,7 @@ def strip_markdown(text: str) -> str:
 
 
 class OutputBlock(Block):
-    type, label, category, icon, color = "output", "Output", "Basics", "Send", "#22c55e"
+    type, label, category, icon, color = "output", "Output", "Basics", "Send", "#5d8f5f"
     summary = "What your agent sends back to the person."
     config_model = OutputConfig
     out_handles = []
@@ -387,7 +403,7 @@ class KnowledgeConfig(_Cfg):
 
 
 class KnowledgeSearchBlock(Block):
-    type, label, category, icon, color = "knowledge_search", "Knowledge Search", "Knowledge", "BookOpen", "#06b6d4"
+    type, label, category, icon, color = "knowledge_search", "Knowledge Search", "Knowledge", "BookOpen", "#4f8a9c"
     summary = "Looks through your uploaded documents for passages that answer the question."
     config_model = KnowledgeConfig
     required_var_keys = ["query_source"]
@@ -421,7 +437,7 @@ class ApprovalConfig(_Cfg):
 
 
 class HumanApprovalBlock(Block):
-    type, label, category, icon, color = "human_approval", "Human Approval", "Logic", "UserCheck", "#ec4899"
+    type, label, category, icon, color = "human_approval", "Human Approval", "Logic", "UserCheck", "#a8676f"
     summary = "Pauses and waits for you to approve or reject before continuing."
     config_model = ApprovalConfig
     fields = [
@@ -462,7 +478,7 @@ class TransformConfig(_Cfg):
 
 
 class TextTransformBlock(Block):
-    type, label, category, icon, color = "text_transform", "Text Transformation", "Logic", "Wand2", "#14b8a6"
+    type, label, category, icon, color = "text_transform", "Text Transformation", "Logic", "Type", "#7a7f5a"
     summary = "Changes text with a simple rule, like adding a signature or shortening it."
     config_model = TransformConfig
     required_var_keys = ["source"]
