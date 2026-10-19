@@ -33,9 +33,9 @@ function Connections({ node, nodes, edges, canConnect, onConnect, onRemoveEdge }
   if (!def) return null;
   return (
     <div className="space-y-3 rounded-md border border-line p-3" data-testid="connections">
-      <div className="flex items-center gap-1.5 text-xs font-medium"><Link2 className="h-3.5 w-3.5 text-muted" />Connections</div>
+      <div className="flex items-center gap-1.5 text-xs font-medium"><Link2 className="h-3.5 w-3.5 text-muted" />Joined to</div>
       {def.accepts_input && (
-        <p className="text-[11px] text-muted">
+        <p className="text-xs text-muted">
           {incoming.length ? <>Comes after: {incoming.map((e) => <b key={e.id} className="text-fg">{name(e.source)}</b>).reduce<React.ReactNode[]>((a, x, i) => (i ? [...a, ", ", x] : [x]), [])}</> : "Nothing connects into this block yet."}
         </p>
       )}
@@ -48,7 +48,7 @@ function Connections({ node, nodes, edges, canConnect, onConnect, onRemoveEdge }
             {outs.map((e) => (
               <div key={e.id} className="mb-1 flex items-center gap-2 rounded-lg bg-line/40 px-2.5 py-1 text-xs">
                 <ArrowRight className="h-3 w-3 text-muted" /><span className="flex-1 truncate">{name(e.target)}</span>
-                <button onClick={() => onRemoveEdge(e.id)} className="text-muted hover:text-bad" aria-label={`Disconnect ${name(e.target)}`} title="Disconnect"><X className="h-3.5 w-3.5" /></button>
+                <button onClick={() => onRemoveEdge(e.id)} className="text-muted hover:text-bad" aria-label={`Disconnect ${name(e.target)}`} title="Remove this line"><X className="h-3.5 w-3.5" /></button>
               </div>
             ))}
             {options.length > 0 && (
@@ -57,11 +57,11 @@ function Connections({ node, nodes, edges, canConnect, onConnect, onRemoveEdge }
                 {options.map((n) => <option key={n.id} value={n.id}>{n.data.label || blocks[n.data.blockType]?.label}</option>)}
               </Select>
             )}
-            {!outs.length && !options.length && <p className="text-[11px] text-muted">Add another block to connect it here.</p>}
+            {!outs.length && !options.length && <p className="text-xs text-muted">Add another step to join it here.</p>}
           </div>
         );
       })}
-      {!def.out_handles.length && <p className="text-[11px] text-muted">This is the end of the workflow, so nothing comes after it.</p>}
+      {!def.out_handles.length && <p className="text-xs text-muted">This is the last step, so nothing comes after it.</p>}
     </div>
   );
 }
@@ -129,7 +129,7 @@ export function SettingsPanel({ node, onChange, onDelete, onDuplicate, ...conn }
           <>
             <Select id={id} value={known ? v : "__custom"} onChange={(e) => e.target.value !== "__custom" && set(f.key, e.target.value)}>
               {models.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
-              {provider?.id === "ollama" && <option value="__custom">Other model name…</option>}
+              {provider?.id === "ollama" && <option value="__custom">Other AI brain name…</option>}
             </Select>
             {provider?.id === "ollama" && !known && <Input className="mt-2" value={v ?? ""} onChange={(e) => set(f.key, e.target.value)} placeholder="e.g. llama3.1:8b" />}
           </>
@@ -147,15 +147,15 @@ export function SettingsPanel({ node, onChange, onDelete, onDuplicate, ...conn }
           <Icon className="h-4 w-4 shrink-0" style={{ color: def.color }} />
           <div className="min-w-0 flex-1">
             <div className="text-xs text-muted">{def.label} block</div>
-            <Input aria-label="Block name" value={node.data.label} onChange={(e) => onChange(node.id, { label: e.target.value })} className="mt-0.5 h-8 font-semibold" maxLength={80} />
+            <Input aria-label="Step name" value={node.data.label} onChange={(e) => onChange(node.id, { label: e.target.value })} className="mt-0.5 h-8 font-semibold" maxLength={80} />
           </div>
         </div>
         <p className="mt-3 text-xs text-muted">{def.summary}</p>
         {node.data.blockType === "ai_model" && provider && (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {!provider.is_generative_ai && <Badge tone="warn">Not generative AI</Badge>}
+            {!provider.is_generative_ai && <Badge tone="warn">Not AI: quotes your documents</Badge>}
             {provider.kind === "local" && <Badge tone="blue">Free · runs on your computer</Badge>}
-            {!provider.available && <Badge tone="bad">{provider.id === "ollama" ? "Ollama isn't running" : "Unavailable"}</Badge>}
+            {!provider.available && <Badge tone="bad">{provider.id === "ollama" ? "Not installed on this computer" : "Not available"}</Badge>}
           </div>
         )}
         {issues.length > 0 && (
@@ -174,10 +174,10 @@ export function SettingsPanel({ node, onChange, onDelete, onDuplicate, ...conn }
           <div key={f.key} className={f.type === "boolean" ? "flex items-start justify-between gap-3" : ""}>
             <div className={f.type === "boolean" ? "min-w-0" : ""}>
               <Label htmlFor={`f-${node.id}-${f.key}`} className={f.type === "boolean" ? "mb-0.5" : ""}>{f.label}</Label>
-              {f.type === "boolean" && f.help && <p className="text-[11px] text-muted">{f.help}</p>}
+              {f.type === "boolean" && f.help && <p className="text-xs text-muted">{f.help}</p>}
             </div>
             {renderField(f)}
-            {f.type !== "boolean" && f.help && <p className="mt-1 text-[11px] text-muted">{f.help}</p>}
+            {f.type !== "boolean" && f.help && <p className="mt-1 text-xs text-muted">{f.help}</p>}
           </div>
         ))}
       </div>

@@ -24,46 +24,52 @@ export default function SettingsPage() {
   useEffect(() => { loadProviders(); api("/api/settings/runtime").then(setRuntime); }, []);
 
   const save = async () => {
-    try { await api("/api/auth/me", { method: "PATCH", json: { display_name: name } }); await refresh(); toast("ok", "Profile saved"); }
-    catch (e: any) { toast("error", e.message); }
+    try { await api("/api/auth/me", { method: "PATCH", json: { display_name: name } }); await refresh(); toast("ok", "Your name is saved."); }
+    catch { toast("error", "We couldn't save your name. Please try again."); }
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Settings" subtitle="Your profile, appearance and AI models." />
+      <PageHeader title="Settings" subtitle="Your name, how the screen looks, and your AI brain." />
       <Card>
-        <CardHeader><CardTitle>Profile</CardTitle><CardDescription>{user?.email}</CardDescription></CardHeader>
+        <CardHeader><CardTitle>About you</CardTitle><CardDescription>Your email address: {user?.email}</CardDescription></CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
-          <div className="w-72"><Label htmlFor="dn">Display name</Label><Input id="dn" value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <Button onClick={save}>Save</Button>
+          <div className="w-72"><Label htmlFor="dn">Your name</Label><Input id="dn" value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <Button onClick={save}>Save my name</Button>
           <Button variant="ghost" onClick={signOut} className="ml-auto">Sign out</Button>
         </CardContent>
       </Card>
       <Card>
-        <CardHeader><CardTitle>Appearance</CardTitle></CardHeader>
-        <CardContent><Button variant="secondary" onClick={toggle}>{theme === "dark" ? <Sun /> : <Moon />}Switch to {theme === "dark" ? "light" : "dark"} mode</Button></CardContent>
+        <CardHeader><CardTitle>How the screen looks</CardTitle></CardHeader>
+        <CardContent><Button variant="secondary" onClick={toggle}>{theme === "dark" ? <Sun /> : <Moon />}{theme === "dark" ? "Use a light screen" : "Use a dark screen"}</Button></CardContent>
       </Card>
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between"><CardTitle>AI models</CardTitle><Button variant="ghost" size="sm" onClick={loadProviders}><RefreshCw />Check again</Button></div>
-          <CardDescription>This version runs AI on your own computer with Ollama. No AI company APIs are used.</CardDescription>
+          <div className="flex items-center justify-between"><CardTitle>AI brain</CardTitle><Button variant="ghost" onClick={loadProviders}><RefreshCw />Check again</Button></div>
+          <CardDescription>Your AI thinks using the free AI program (Ollama) on your own computer. Nothing is sent to other companies.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {!providers ? <p className="text-sm text-muted">Checking…</p> : providers.map((p) => (
+          {!providers ? <p className="text-base text-muted">Checking…</p> : providers.map((p) => (
             <div key={p.id} className="rounded-xl border border-line p-4">
               <div className="flex flex-wrap items-center gap-2">
-                {p.available ? <CircleCheck className="h-4 w-4 text-ok" /> : <CircleX className="h-4 w-4 text-muted" />}
-                <span className="font-medium">{p.name}</span>
+                {p.available ? <CircleCheck className="h-5 w-5 text-ok" aria-label="Working" /> : <CircleX className="h-5 w-5 text-muted" aria-label="Not working yet" />}
+                <span className="text-lg font-medium">{p.id === "ollama" ? "The free AI program (Ollama)" : p.name}</span>
                 {!p.implemented && <Badge>Coming later</Badge>}
-                {!p.is_generative_ai && <Badge tone="warn">Not AI</Badge>}
-                {p.kind === "local" && <Badge tone="blue">Free · Private</Badge>}
+                {!p.is_generative_ai && <Badge tone="warn">Simple answers only</Badge>}
+                {p.kind === "local" && <Badge tone="blue">Free and private</Badge>}
               </div>
-              <p className="mt-1 text-sm text-muted">{p.description}</p>
-              <p className="mt-1 text-xs text-muted">{p.status_message}</p>
+              <p className="mt-1 text-base text-muted">{p.description}</p>
+              <p className="mt-1 text-base text-muted">{p.status_message}</p>
               {p.id === "ollama" && !p.available && (
-                <div className="mt-3 rounded-lg bg-bg/70 p-3 font-mono text-xs leading-relaxed">
-                  <div className="mb-1 flex items-center gap-1.5 font-sans text-muted"><Terminal className="h-3.5 w-3.5" />Set up a free local model (one time):</div>
-                  1. Install Ollama from https://ollama.com<br />2. ollama pull llama3.2<br />3. (optional, better document search) ollama pull nomic-embed-text
+                <div className="mt-3 rounded-lg bg-bg/70 p-4 text-base leading-relaxed">
+                  <div className="mb-2 flex items-center gap-2 font-medium"><Terminal className="h-5 w-5" />The free AI program is not on this computer yet. To set it up (you only do this once):</div>
+                  <ol className="list-decimal space-y-1 pl-6">
+                    <li>Go to ollama.com and install the program.</li>
+                    <li>Open the Terminal app and type: <code className="font-mono">ollama pull llama3.2</code></li>
+                    <li>If you want it to search your documents better, also type: <code className="font-mono">ollama pull nomic-embed-text</code></li>
+                    <li>Come back here and press &quot;Check again&quot;.</li>
+                  </ol>
+                  <p className="mt-2 text-muted">If this sounds hard, ask a family member or friend to help.</p>
                 </div>
               )}
             </div>
@@ -72,14 +78,19 @@ export default function SettingsPage() {
       </Card>
       {runtime && (
         <Card>
-          <CardHeader><CardTitle>Safety limits</CardTitle><CardDescription>Set by the server administrator.</CardDescription></CardHeader>
-          <CardContent className="grid gap-2 text-sm sm:grid-cols-2">
-            <span>Blocks per workflow: <b>{runtime.max_nodes}</b></span>
-            <span>Max time per run: <b>{runtime.run_timeout_seconds}s</b></span>
-            <span>AI calls per run: <b>{runtime.max_ai_calls_per_run}</b></span>
-            <span>Runs at once: <b>{runtime.max_concurrent_runs}</b></span>
-            <span>Max upload size: <b>{runtime.max_upload_mb} MB</b></span>
-            <span>Sign-in: <b>{runtime.auth_mode === "local" ? "Built-in accounts" : "Supabase"}</b></span>
+          <CardHeader><CardTitle>Limits</CardTitle><CardDescription>These are set for you. You don&apos;t need to change them.</CardDescription></CardHeader>
+          <CardContent>
+            <details>
+              <summary className="cursor-pointer text-base font-medium">More details</summary>
+              <div className="mt-3 grid gap-2 text-base sm:grid-cols-2">
+                <span>Most steps in one AI: <b>{runtime.max_nodes}</b></span>
+                <span>Longest time to answer: <b>{runtime.run_timeout_seconds} seconds</b></span>
+                <span>Most times the AI brain is asked per question: <b>{runtime.max_ai_calls_per_run}</b></span>
+                <span>Questions answered at the same time: <b>{runtime.max_concurrent_runs}</b></span>
+                <span>Biggest document you can add: <b>{runtime.max_upload_mb} MB</b></span>
+                <span>Sign-in: <b>{runtime.auth_mode === "local" ? "Built-in accounts" : "Supabase"}</b></span>
+              </div>
+            </details>
           </CardContent>
         </Card>
       )}

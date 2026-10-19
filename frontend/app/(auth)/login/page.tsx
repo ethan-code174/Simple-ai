@@ -14,7 +14,7 @@ function LoginForm() {
   const params = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(params.get("expired") ? "Your session expired. Please sign in again." : "");
+  const [error, setError] = useState(params.get("expired") ? "You were signed out to keep your account safe. Please sign in again." : "");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -25,7 +25,7 @@ function LoginForm() {
       await signIn(email, password);
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "We couldn't sign you in. Please check your email and password and try again.");
     } finally {
       setBusy(false);
     }
@@ -33,17 +33,17 @@ function LoginForm() {
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Welcome back</h1>
-        <p className="mt-1 text-sm text-muted">Sign in to your AI Factory account.</p>
+        <h1 className="text-2xl font-semibold">Sign in</h1>
+        <p className="mt-1 text-base text-muted">Type your email and password.</p>
       </div>
-      <div><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+      <div><Label htmlFor="email">Your email address</Label><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
       <div>
-        <div className="flex items-center justify-between"><Label htmlFor="password">Password</Label><Link href="/forgot" className="mb-1.5 text-xs text-accent hover:underline">Forgot password?</Link></div>
+        <div className="flex items-center justify-between"><Label htmlFor="password">Your password</Label><Link href="/forgot" className="mb-1.5 text-base text-accent underline">Forgot it?</Link></div>
         <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
       </div>
-      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-base text-bad">{error}</p>}
       <Button className="w-full" disabled={busy}>{busy && <Spinner />} Sign in</Button>
-      <p className="text-center text-sm text-muted">New here? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
+      <p className="text-center text-base text-muted">New here? <Link href="/signup" className="text-accent underline">Sign up free</Link></p>
     </form>
   );
 }

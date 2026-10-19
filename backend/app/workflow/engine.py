@@ -47,7 +47,7 @@ class CancelToken:
 
 async def run_workflow(report: ValidationReport, ctx: RunContext, *, cancel: CancelToken | None = None,
                        resume: dict | None = None) -> RunOutcome:
-    """Run a validated workflow. `resume` continues a run paused at a Human Approval block:
+    """Run a validated workflow. `resume` continues a run paused at a Ask me first block:
     {"state": <paused_state>, "decision": "approved"|"rejected"}."""
     if not report.ok or report.spec is None:
         err = friendly("invalid_workflow", "; ".join(i.message for i in report.issues if i.severity == "error"))
@@ -82,12 +82,12 @@ async def _execute(report: ValidationReport, ctx: RunContext, outcome: RunOutcom
         start_index = st["next_index"]
         paused_node = st["paused_node"]
         if resume["decision"] == "rejected":
-            outcome.logs.append(NodeLogEntry(paused_node, "human_approval", nodes[paused_node].label or "Human Approval",
+            outcome.logs.append(NodeLogEntry(paused_node, "human_approval", nodes[paused_node].label or "Ask me first",
                                              "failed", "Rejected by a reviewer"))
             outcome.status = "rejected"
             outcome.reply = st.get("rejected_reply") or "Sorry, we can't help with that request."
             return
-        outcome.logs.append(NodeLogEntry(paused_node, "human_approval", nodes[paused_node].label or "Human Approval",
+        outcome.logs.append(NodeLogEntry(paused_node, "human_approval", nodes[paused_node].label or "Ask me first",
                                          "succeeded", "Approved by a reviewer"))
 
     def edge_live(e) -> bool:

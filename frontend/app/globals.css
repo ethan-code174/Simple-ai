@@ -7,9 +7,9 @@
   --bg: 246 246 244;
   --panel: 251 251 250;
   --card: 255 255 255;
-  --line: 222 222 218;
-  --fg: 28 28 26;
-  --muted: 104 104 99;
+  --line: 205 205 200;
+  --fg: 20 20 18;
+  --muted: 78 78 74;
   --accent: 15 110 100;
   --accent2: 15 110 100;
   --ok: 34 128 74;
@@ -18,14 +18,14 @@
   color-scheme: light;
 }
 
-/* Dark theme (default) */
+/* Dark theme (optional) */
 .dark {
   --bg: 22 22 21;
   --panel: 28 28 27;
   --card: 33 33 32;
   --line: 52 52 50;
   --fg: 232 232 228;
-  --muted: 150 150 144;
+  --muted: 172 172 166;
   --accent: 72 178 160;
   --accent2: 72 178 160;
   --ok: 92 184 122;
@@ -35,6 +35,9 @@
 }
 
 html, body { height: 100%; }
+/* Everything is sized from this: 18px base so text and buttons are comfortable to read and press. */
+html { font-size: 112.5%; }
+:focus-visible { outline: 3px solid rgb(var(--accent)); outline-offset: 2px; }
 :root { --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
 html { font-family: var(--font-sans); }
 body {

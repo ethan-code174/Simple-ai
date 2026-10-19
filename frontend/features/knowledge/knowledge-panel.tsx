@@ -50,7 +50,7 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
       >
         {uploading ? <Spinner className="h-6 w-6 text-accent" /> : <UploadCloud className="h-7 w-7 text-accent" />}
         <span>{uploading ? "Reading your file…" : "Drop files here or click to upload"}</span>
-        <span className="text-[11px] text-muted">Up to 10 MB each</span>
+        <span className="text-xs text-muted">Up to 10 MB each</span>
       </button>
       <input ref={fileRef} type="file" multiple accept=".pdf,.txt,.md,.markdown" className="hidden" data-testid="doc-upload" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
 
@@ -62,14 +62,14 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
               <span className="min-w-0 flex-1 truncate text-sm font-medium">{d.filename}</span>
               {d.status === "ready" ? <Badge tone="ok">Ready</Badge> : d.status === "failed" ? <Badge tone="bad">Failed</Badge> : <Badge>Processing</Badge>}
             </div>
-            <div className="mt-1 flex items-center justify-between text-[11px] text-muted">
+            <div className="mt-1 flex items-center justify-between text-xs text-muted">
               <span>{(d.size_bytes / 1024).toFixed(0)} KB · {d.chunk_count} sections · {d.index_method === "keyword" ? "keyword search" : d.index_method}</span>
               <span className="flex gap-1">
                 <button title="Re-read file" aria-label="Reindex" onClick={async () => { await api(`/api/documents/${d.id}/reindex`, { method: "POST" }); load(); toast("ok", "Re-indexed"); }} className="rounded p-1 hover:bg-line/60"><RefreshCw className="h-3.5 w-3.5" /></button>
                 <button title="Delete" aria-label="Delete document" onClick={async () => { await api(`/api/documents/${d.id}`, { method: "DELETE" }); load(); }} className="rounded p-1 hover:bg-line/60 hover:text-bad"><Trash2 className="h-3.5 w-3.5" /></button>
               </span>
             </div>
-            {d.error && <p className="mt-1 text-[11px] text-bad">{d.error}</p>}
+            {d.error && <p className="mt-1 text-xs text-bad">{d.error}</p>}
           </div>
         ))}
         {docs && docs.length === 0 && <p className="py-4 text-center text-xs text-muted">No documents yet.</p>}
@@ -87,7 +87,7 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
               <div key={r.chunk_id} className="rounded-lg bg-bg/60 p-2.5 text-xs"><div className="mb-1 font-medium text-accent">{r.source_label}</div><p className="line-clamp-4 text-muted">{r.content}</p></div>
             ))}</div>
           ))}
-          <p className="mt-3 text-[11px] text-muted">Search uses keyword matching (BM25). If Ollama has <code>nomic-embed-text</code>, new uploads also get meaning-based search.</p>
+          <p className="mt-3 text-xs text-muted">Search uses keyword matching (BM25). If Ollama has <code>nomic-embed-text</code>, new uploads also get meaning-based search.</p>
         </div>
       )}
     </div>

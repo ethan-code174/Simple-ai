@@ -26,17 +26,17 @@ class FriendlyError(Exception):
 
 # Known codes -> default friendly wording. Used when wrapping unexpected exceptions too.
 FRIENDLY_MESSAGES = {
-    "provider_unreachable": "Your AI model isn't running. Start Ollama on this computer (or pick another model) and try again.",
-    "model_not_found": "The AI model you picked isn't installed yet. Download it in Ollama first.",
-    "provider_auth": "The AI connection isn't working. Check your API key.",
-    "provider_timeout": "The AI took too long to answer. Try again, or use a smaller model.",
-    "provider_not_enabled": "This AI provider isn't switched on in this version. The MVP runs on local models only.",
-    "provider_error": "The AI model returned an error.",
-    "run_timeout": "Your agent took too long to finish, so it was stopped.",
-    "ai_call_limit": "Your agent tried to use the AI model too many times in one run.",
-    "cancelled": "The run was cancelled.",
-    "invalid_workflow": "Your workflow has problems that need fixing before it can run.",
-    "internal": "Something went wrong inside AI Factory. The details below can help us fix it.",
+    "provider_unreachable": "The free AI program (Ollama) isn't running on this computer, so your AI can't think yet. Install or open Ollama, or switch to the no-AI option that answers from your documents.",
+    "model_not_found": "The AI brain you picked isn't downloaded yet. Download it in Ollama first, or pick a different one.",
+    "provider_auth": "The connection to the AI isn't working. Check its settings.",
+    "provider_timeout": "The AI took too long to answer. Please try again.",
+    "provider_not_enabled": "This AI brain isn't available yet. Pick the free one that runs on your computer.",
+    "provider_error": "The AI had a problem answering. Please try again.",
+    "run_timeout": "Your AI took too long to answer, so it was stopped. Please try again.",
+    "ai_call_limit": "Your AI tried to think too many times for one question. Try a shorter question.",
+    "cancelled": "This was stopped.",
+    "invalid_workflow": "Your AI has a problem that needs fixing before it can answer. Open the steps to see what to fix.",
+    "internal": "Something went wrong on our side. Please try again.",
 }
 
 

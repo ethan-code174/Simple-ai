@@ -15,12 +15,12 @@ function FlowEdgeView({ id, sourceX, sourceY, targetX, targetY, sourcePosition, 
       {(label || selected) && (
         <EdgeLabelRenderer>
           <div className="nodrag nopan pointer-events-auto absolute flex items-center gap-1" style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)` }}>
-            {label && <span className="rounded border border-line bg-card px-1.5 py-px text-[11px] font-medium">{label}</span>}
+            {label && <span className="rounded border border-line bg-card px-1.5 py-px text-xs font-medium">{label}</span>}
             {selected && (
               <button
                 onClick={() => removeEdge?.(id)}
                 className="grid h-5 w-5 place-items-center rounded border border-line bg-card text-muted hover:border-bad hover:text-bad"
-                title="Remove this connection" aria-label="Remove this connection" data-testid="edge-remove"
+                title="Remove this line" aria-label="Remove this line" data-testid="edge-remove"
               >
                 <X className="h-3 w-3" />
               </button>

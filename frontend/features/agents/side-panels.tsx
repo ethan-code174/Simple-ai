@@ -25,7 +25,7 @@ export function VersionsPanel({ agentId, refreshKey, onRestore }: { agentId: str
             <div className="min-w-0 flex-1">
               <div className="text-sm font-medium">Version {v.version} {i === 0 && <span className="text-xs text-accent">· latest</span>}</div>
               <div className="truncate text-xs text-muted" title={v.note}>{v.note || "Saved"}</div>
-              <div className="text-[11px] text-muted">{timeAgo(v.created_at)} · {v.blocks} blocks</div>
+              <div className="text-xs text-muted">{timeAgo(v.created_at)} · {v.blocks} blocks</div>
             </div>
             {i !== 0 && <Button size="sm" variant="ghost" onClick={() => onRestore(v.version)}><RotateCcw />Restore</Button>}
           </div>

@@ -16,30 +16,30 @@ export default function ForgotPage() {
     try {
       setResult(await api("/api/auth/forgot", { method: "POST", json: { email } }));
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "That didn't work. Please check your email address and try again.");
     }
   };
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Reset your password</h1>
-        <p className="mt-1 text-sm text-muted">Enter your email and we'll create a reset link.</p>
+        <h1 className="text-2xl font-semibold">Forgot your password?</h1>
+        <p className="mt-1 text-base text-muted">Type your email address. We will make a link so you can choose a new password.</p>
       </div>
-      <div><Label htmlFor="email">Email</Label><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
-      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+      <div><Label htmlFor="email">Your email address</Label><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></div>
+      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-base text-bad">{error}</p>}
       {result && (
-        <div className="rounded-lg bg-accent/10 px-3 py-2 text-sm">
+        <div className="rounded-lg bg-accent/10 px-3 py-2 text-base">
           <p>{result.message}</p>
           {result.dev_reset_token && (
-            <p className="mt-2 text-xs text-muted">
-              Development mode: email sending isn't configured, so here is your link:{" "}
-              <Link className="text-accent underline" href={`/reset?token=${encodeURIComponent(result.dev_reset_token)}`}>Reset password</Link>
+            <p className="mt-2 text-base text-muted">
+              Email is not set up yet, so here is your link:{" "}
+              <Link className="text-accent underline" href={`/reset?token=${encodeURIComponent(result.dev_reset_token)}`}>Choose a new password</Link>
             </p>
           )}
         </div>
       )}
-      <Button className="w-full">Create reset link</Button>
-      <p className="text-center text-sm text-muted"><Link href="/login" className="text-accent hover:underline">Back to sign in</Link></p>
+      <Button className="w-full">Get my link</Button>
+      <p className="text-center text-base text-muted"><Link href="/login" className="text-accent underline">Go back to sign in</Link></p>
     </form>
   );
 }

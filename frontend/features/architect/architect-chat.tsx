@@ -13,7 +13,7 @@ type Proposal = { understood: boolean; message: string; summary: string[]; chang
 type Msg = { role: "user" | "architect"; text: string; proposal?: Proposal; status?: "pending" | "applied" | "discarded" };
 
 const SUGGESTIONS = [
-  "Add a condition that sends complicated questions for human review",
+  "Let me check hard questions before they're answered",
   "Make it more friendly",
   "Always reply in Spanish",
   "Limit replies to 80 words",
@@ -28,7 +28,7 @@ export function ArchitectChat({ agentId, getSpec, onApplied, intro }: {
 }) {
   const [msgs, setMsgs] = useState<Msg[]>(() => [{
     role: "architect",
-    text: intro ?? "Hi, I'm **The Architect**. Tell me what to change and I'll show you exactly what will be added, removed or modified before anything happens.",
+    text: intro ?? "Tell me in your own words what you'd like to change, for example “make it more friendly”. I'll show you the change first, and nothing happens until you say yes.",
   }]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -80,7 +80,7 @@ export function ArchitectChat({ agentId, getSpec, onApplied, intro }: {
               <div className="max-w-[85%] rounded-lg bg-line/70 px-3 py-2 text-sm">{m.text}</div>
             ) : (
               <div className="flex gap-2.5">
-                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded bg-line text-[10px] font-semibold text-muted">A</span>
+                <span className="mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded bg-line text-xs font-semibold text-muted">A</span>
                 <div className="min-w-0 flex-1 text-sm text-fg/90">
                   <MarkdownLite text={m.text} />
                   {m.proposal && <ProposalCard p={m.proposal} status={m.status} onAccept={() => decide(i, true)} onDiscard={() => decide(i, false)} />}
@@ -89,15 +89,15 @@ export function ArchitectChat({ agentId, getSpec, onApplied, intro }: {
             )}
           </div>
         ))}
-        {busy && <div className="flex items-center gap-2 pl-10 text-sm text-muted"><Spinner className="h-3.5 w-3.5" />Thinking about your change…</div>}
+        {busy && <div className="flex items-center gap-2 pl-10 text-sm text-muted"><Spinner className="h-3.5 w-3.5" />Working out the change…</div>}
         <div ref={end} />
       </div>
       <div className="border-t border-line p-3">
         <div className="mb-2 flex flex-wrap gap-1.5">
-          {SUGGESTIONS.map((s) => <button key={s} onClick={() => send(s)} className="rounded-full border border-line px-2.5 py-1 text-[11px] text-muted hover:border-accent/50 hover:text-fg">{s}</button>)}
+          {SUGGESTIONS.map((s) => <button key={s} onClick={() => send(s)} className="rounded-full border border-line px-2.5 py-1 text-xs text-muted hover:border-accent/50 hover:text-fg">{s}</button>)}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex gap-2">
-          <input aria-label="Message The Architect" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Describe a change…" className="h-9 flex-1 rounded-lg border border-line bg-bg/60 px-3 text-sm focus:border-accent/70 focus:outline-none" />
+          <input aria-label="Ask for a change" value={input} onChange={(e) => setInput(e.target.value)} placeholder="What would you like to change?" className="h-9 flex-1 rounded-lg border border-line bg-bg/60 px-3 text-sm focus:border-accent/70 focus:outline-none" />
           <Button size="icon" className="h-9 w-9" disabled={busy || !input.trim()} aria-label="Send"><Send /></Button>
         </form>
       </div>
@@ -109,7 +109,7 @@ function ProposalCard({ p, status, onAccept, onDiscard }: { p: Proposal; status?
   const errors = p.validation.issues.filter((i) => i.severity === "error");
   return (
     <div className="mt-2 rounded-xl border border-line bg-bg/50 p-3">
-      <ul className="space-y-1.5 text-[13px]">{p.summary.map((s, i) => <li key={i}><MarkdownLite text={s} /></li>)}</ul>
+      <ul className="space-y-1.5 text-base">{p.summary.map((s, i) => <li key={i}><MarkdownLite text={s} /></li>)}</ul>
       <div className="mt-3 space-y-1 border-t border-line pt-2 text-xs">
         {p.changes.map((c, i) => c.kind === "connections" ? (
           <div key={i} className="text-muted">Connections: +{c.added} / −{c.removed}</div>
@@ -121,14 +121,14 @@ function ProposalCard({ p, status, onAccept, onDiscard }: { p: Proposal; status?
           </div>
         ))}
       </div>
-      {errors.length > 0 && <p className="mt-2 flex gap-1.5 text-xs text-bad"><AlertTriangle className="h-3.5 w-3.5" />This change would leave problems: {errors[0].message}</p>}
+      {errors.length > 0 && <p className="mt-2 flex gap-1.5 text-xs text-bad"><AlertTriangle className="h-3.5 w-3.5" />This change would leave something to fix: {errors[0].message}</p>}
       {status === "pending" ? (
         <div className="mt-3 flex gap-2">
-          <Button size="sm" variant="success" onClick={onAccept}><Check />Apply change</Button>
-          <Button size="sm" variant="ghost" onClick={onDiscard}><X />Discard</Button>
+          <Button size="sm" variant="success" onClick={onAccept}><Check />Yes, make this change</Button>
+          <Button size="sm" variant="ghost" onClick={onDiscard}><X />No thanks</Button>
         </div>
       ) : (
-        <p className="mt-2 text-xs text-muted">{status === "applied" ? "✓ Applied" : "Discarded"}</p>
+        <p className="mt-2 text-xs text-muted">{status === "applied" ? "✓ Done" : "Not changed"}</p>
       )}
     </div>
   );

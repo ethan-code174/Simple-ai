@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { iconFor } from "@/lib/icons";
 import type { BlockDef } from "@/types";
 
-const ORDER = ["Basics", "AI", "Knowledge", "Logic"];
+const ORDER = ["Basics", "AI", "Your documents", "Choices"];
 
 export function BlockLibrary({ blocks, onAdd }: { blocks: BlockDef[]; onAdd: (type: string) => void }) {
   const [q, setQ] = useState("");
@@ -17,9 +17,9 @@ export function BlockLibrary({ blocks, onAdd }: { blocks: BlockDef[]; onAdd: (ty
       <div className="p-3">
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted" />
-          <Input aria-label="Search blocks" className="pl-8" placeholder="Search blocks" value={q} onChange={(e) => setQ(e.target.value)} />
+          <Input aria-label="Search steps" className="pl-8" placeholder="Search steps" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
-        <p className="mt-2 text-[11px] text-muted">Drag a block onto the canvas, or click to add it. If a block is selected, or you drop onto a block, the new one is connected after it. You can also click + Next under any block.</p>
+        <p className="mt-2 text-xs text-muted">Click a step to add it after the one you picked, or drag it onto the board.</p>
       </div>
       <div className="flex-1 space-y-4 overflow-y-auto px-3 pb-4">
         {cats.map((cat) => (
@@ -40,7 +40,7 @@ export function BlockLibrary({ blocks, onAdd }: { blocks: BlockDef[]; onAdd: (ty
                     <Icon className="mt-0.5 h-4 w-4 shrink-0" style={{ color: b.color }} />
                     <span className="min-w-0">
                       <span className="block text-sm font-medium">{b.label}</span>
-                      <span className="block text-[11px] leading-snug text-muted">{b.summary}</span>
+                      <span className="block text-xs leading-snug text-muted">{b.summary}</span>
                     </span>
                   </button>
                 );

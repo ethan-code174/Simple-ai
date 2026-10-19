@@ -84,7 +84,7 @@ def build_plan(prompt: str, provider: str = "ollama", model: str = "llama3.2") -
     nodes = [_node("input_1", "input", "Customer message" if a.role in ("receptionist", "support", "faq") else "Message",
                    {"name": "message", "input_type": "text", "default_value": "", "required": True})]
     edges: list[dict] = []
-    steps = ["**Input** receives each message a person types."]
+    steps = ["**Incoming message** receives each message a person types."]
 
     head = "input_1"  # the node new steps attach after
     if a.human_review:
@@ -97,22 +97,22 @@ def build_plan(prompt: str, provider: str = "ollama", model: str = "llama3.2") -
             "rejected_reply": "Thanks for your patience. Our team will contact you directly about this."}))
         edges.append(_edge("input_1", "condition_1"))
         edges.append(_edge("condition_1", "approval_1", "true"))
-        steps.append(f"**Condition** checks if the message mentions things like {COMPLEX_KEYWORDS}. "
-                     "If it does, **Human Approval** pauses until you approve it. You can change the words.")
+        steps.append(f"**If / Otherwise** checks if the message mentions things like {COMPLEX_KEYWORDS}. "
+                     "If it does, **Ask me first** pauses until you approve it. You can change the words.")
     if a.needs_knowledge:
         nodes.append(_node("knowledge_1", "knowledge_search", "Search documents", {"query_source": "message", "top_k": 4}))
-        steps.append("**Knowledge Search** finds the parts of your uploaded documents that match the question.")
+        steps.append("**Look in documents** finds the parts of your uploaded documents that match the question.")
     nodes.append(_node("prompt_1", "prompt", "Instructions", {
         "system_prompt": system, "instructions": "\n".join(rules), "user_prompt": "{{message}}"}))
-    steps.append("**Prompt** tells the AI who it is and the rules it follows.")
+    steps.append("**Instructions** tells the AI who it is and the rules it follows.")
     nodes.append(_node("model_1", "ai_model", "AI brain", {
         "provider": provider, "model": model, "temperature": 0.3 if a.needs_knowledge else 0.6,
         "max_tokens": 700 if a.role in ("email", "research", "writer") else 400,
         "use_knowledge": a.needs_knowledge, "use_history": True, "output_variable": "ai_response"}))
-    steps.append("**AI Model** is the brain: it writes the reply.")
+    steps.append("**AI brain** is the brain: it writes the reply.")
     nodes.append(_node("output_1", "output", "Reply", {
         "name": "reply", "content_source": "ai_response", "format": "as_is", "include_sources": a.needs_knowledge}))
-    steps.append("**Output** sends the reply back" + (" with the document sources." if a.needs_knowledge else "."))
+    steps.append("**Reply** sends the reply back" + (" with the document sources." if a.needs_knowledge else "."))
 
     first_main = "knowledge_1" if a.needs_knowledge else "prompt_1"
     if a.human_review:

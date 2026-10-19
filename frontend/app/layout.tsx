@@ -3,13 +3,13 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "AI Factory — Describe it. Build it. Test it. Launch it.",
-  description: "Create, test and publish your own AI agents without writing code.",
+  title: "AI Factory — make your own AI helper",
+  description: "Make your own AI helper in a few easy steps. No computer skills needed.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body>
         <Providers>{children}</Providers>
       </body>

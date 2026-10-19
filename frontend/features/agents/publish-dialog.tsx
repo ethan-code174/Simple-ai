@@ -61,7 +61,7 @@ export function PublishDialog({ open, onClose, agent, validation, beforePublish,
             <Button variant="secondary" size="icon" className="h-9 w-9 shrink-0" aria-label="Copy link" onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? <Check /> : <Copy />}</Button>
             <a href={url} target="_blank" rel="noreferrer"><Button variant="secondary" size="icon" className="h-9 w-9" aria-label="Open public page"><ExternalLink /></Button></a>
           </div>
-          <p className="mt-2 text-[11px] text-muted">Changes you make in the editor go live only when you publish again.</p>
+          <p className="mt-2 text-xs text-muted">Changes you make in the editor go live only when you publish again.</p>
         </div>
       )}
       {errors.length > 0 && (

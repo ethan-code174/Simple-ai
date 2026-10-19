@@ -12,13 +12,13 @@ import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/agents", label: "My Agents", icon: Bot },
-  { href: "/agents/new", label: "Create Agent", icon: Plus },
-  { href: "/templates", label: "Templates", icon: LayoutTemplate },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/agents/new", label: "Make a new AI", icon: Plus },
+  { href: "/dashboard", label: "Home", icon: LayoutDashboard },
+  { href: "/agents", label: "My AIs", icon: Bot },
+  { href: "/templates", label: "Ready-made AIs", icon: LayoutTemplate },
+  { href: "/analytics", label: "How it's going", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/billing", label: "Billing", icon: CreditCard },
+  { href: "/billing", label: "My plan", icon: CreditCard },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -31,25 +31,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const nav = (
     <nav className="flex h-full flex-col gap-1 p-4">
-      <div className="mb-6 px-2 pt-1"><Logo /></div>
+      <div className="mb-6 px-2 pt-1 text-lg"><Logo /></div>
       {NAV.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
           onClick={() => setOpen(false)}
           className={cn(
-            "group flex items-center gap-3 rounded-md px-3 py-1.5 text-sm transition-colors",
-            active(href) ? "bg-line/60 text-fg" : "text-muted hover:bg-line/40 hover:text-fg"
+            "group flex min-h-12 items-center gap-3 rounded-md px-3 py-2 text-base font-medium transition-colors",
+            href === "/agents/new" ? "mb-3 bg-accent text-white hover:bg-accent/90 dark:text-bg" : active(href) ? "bg-line/60 text-fg" : "text-fg/80 hover:bg-line/40 hover:text-fg"
           )}
         >
-          <Icon className={cn("h-4 w-4", active(href) ? "text-fg" : "text-muted group-hover:text-fg")} />
+          <Icon className="h-5 w-5 shrink-0" />
           {label}
         </Link>
       ))}
       <div className="mt-auto space-y-2">
-        <button onClick={toggle} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted hover:bg-line/40 hover:text-fg">
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          {theme === "dark" ? "Light mode" : "Dark mode"}
+        <button onClick={toggle} className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-2 text-base text-fg/80 hover:bg-line/40 hover:text-fg">
+          {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+          {theme === "dark" ? "Bright screen" : "Dark screen"}
         </button>
         <div className="flex items-center gap-3 border-t border-line px-1 pt-3">
           <Link href="/settings" className="flex min-w-0 flex-1 items-center gap-3">
@@ -61,8 +61,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="block truncate text-xs text-muted">{user?.email}</span>
             </span>
           </Link>
-          <button onClick={signOut} title="Sign out" aria-label="Sign out" className="rounded-md p-1.5 text-muted hover:bg-line/50 hover:text-fg">
-            <LogOut className="h-4 w-4" />
+          <button onClick={signOut} title="Sign out" aria-label="Sign out" className="flex min-h-11 items-center gap-1.5 rounded-md px-2 text-sm text-fg/80 hover:bg-line/50 hover:text-fg">
+            <LogOut className="h-5 w-5" />Sign out
           </button>
         </div>
       </div>
@@ -71,7 +71,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-line bg-panel lg:block">{nav}</aside>
+      <aside className="sticky top-0 hidden h-screen w-72 shrink-0 border-r border-line bg-panel lg:block">{nav}</aside>
       {open && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setOpen(false)} />

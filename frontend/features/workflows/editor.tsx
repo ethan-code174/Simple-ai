@@ -191,13 +191,13 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
     if (source === target) return "A block can't connect to itself.";
     const src = nodesRef.current.find((n) => n.id === source);
     const tgt = nodesRef.current.find((n) => n.id === target);
-    if (!src || !tgt) return "That block no longer exists.";
-    if (!blockMap[tgt.data.blockType]?.accepts_input) return "Nothing can connect into an Input block. It's where messages start.";
-    if (!blockMap[src.data.blockType]?.out_handles.length) return "Output blocks are the end of the line and can't connect onward.";
-    if (!blockMap[src.data.blockType].out_handles.includes(handle)) return "That connector doesn't exist on this block.";
+    if (!src || !tgt) return "That step was deleted.";
+    if (!blockMap[tgt.data.blockType]?.accepts_input) return "Nothing can go into the Incoming message step. It's always first.";
+    if (!blockMap[src.data.blockType]?.out_handles.length) return "The Reply step is always last, so nothing can come after it.";
+    if (!blockMap[src.data.blockType].out_handles.includes(handle)) return "Start the line from one of the dots on the right side of the step.";
     const others = edgesRef.current.filter((e) => e.id !== ignoreEdge);
-    if (others.some((e) => e.source === source && e.target === target && (e.sourceHandle ?? "out") === handle)) return "These two blocks are already connected.";
-    if (reaches(others, target, source)) return "That would connect the blocks in a loop. Workflows must flow in one direction.";
+    if (others.some((e) => e.source === source && e.target === target && (e.sourceHandle ?? "out") === handle)) return "These two steps are already joined.";
+    if (reaches(others, target, source)) return "That would make the steps go round in a circle. Steps must go in one direction.";
     return null;
   }, [blockMap]);
   const canConnect = useCallback((source: string, handle: string, target: string) => !connectionProblem(source, handle, target), [connectionProblem]);
@@ -299,7 +299,7 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
       }
     } else if (!over) {
       commit(nodesRef.current, edgesRef.current.filter((e) => e.id !== edge.id));
-      toast("ok", "Connection removed. Press Ctrl+Z to undo.");
+      toast("ok", "Line removed. Press Undo to bring it back.");
     }
   }, [blockMap, commit, moveEdge, toast]);
 
@@ -411,7 +411,7 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
   const ollama = providers.find((p) => p.id === "ollama");
   const usesOllama = nodes.some((n) => n.data.blockType === "ai_model" && n.data.config.provider === "ollama");
 
-  if (loadError) return <div className="grid h-screen place-items-center text-center"><div><p className="text-bad">{loadError}</p><Link href="/agents" className="mt-3 inline-block text-accent">Back to agents</Link></div></div>;
+  if (loadError) return <div className="grid h-screen place-items-center text-center"><div><p className="text-bad">{loadError}</p><Link href="/agents" className="mt-3 inline-block text-accent">Back to my AIs</Link></div></div>;
   if (!agent) return <div className="grid h-screen place-items-center"><Spinner className="h-6 w-6 text-accent" /></div>;
 
   return (
@@ -419,31 +419,36 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
       <div className="flex h-screen flex-col overflow-hidden">
         {/* Top bar */}
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-panel px-3">
-          <Link href="/agents"><Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" aria-label="Back to agents"><ArrowLeft /></Button></Link>
-          <input aria-label="Agent name" defaultValue={agent.name} onBlur={(e) => renameAgent(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} className="w-56 truncate rounded-md bg-transparent px-2 py-1 font-semibold hover:bg-line/40 focus:bg-line/40 focus:outline-none" maxLength={120} />
-          {agent.status === "published" ? <Badge tone="ok"><Globe className="h-3 w-3" />Live</Badge> : <Badge>Draft</Badge>}
+          <Link href="/agents"><Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" aria-label="Back to my AIs"><ArrowLeft /></Button></Link>
+          <input aria-label="AI name" defaultValue={agent.name} onBlur={(e) => renameAgent(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} className="w-56 truncate rounded-md bg-transparent px-2 py-1 font-semibold hover:bg-line/40 focus:bg-line/40 focus:outline-none" maxLength={120} />
+          {agent.status === "published" ? <Badge tone="ok"><Globe className="h-3 w-3" />Shared</Badge> : <Badge>Not shared yet</Badge>}
           <span className="ml-1 flex items-center gap-1.5 text-xs text-muted" data-testid="save-state">
             {saveState === "saving" || saveState === "pending" ? <><Loader2 className="h-3.5 w-3.5 animate-spin" />Saving…</> : saveState === "error" ? <><CloudOff className="h-3.5 w-3.5 text-bad" />Not saved</> : <><CircleCheck className="h-3.5 w-3.5 text-ok" />Saved</>}
           </span>
           <div className="ml-auto flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={undo} disabled={!hist.current.past.length} title="Undo (Ctrl+Z)" aria-label="Undo"><Undo2 /></Button>
             <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={redo} disabled={!hist.current.future.length} title="Redo (Ctrl+Shift+Z)" aria-label="Redo"><Redo2 /></Button>
-            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={autoLayout} title="Tidy up layout" aria-label="Auto-layout"><LayoutGrid /></Button>
+            <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={autoLayout} title="Tidy up" aria-label="Tidy up"><LayoutGrid /></Button>
             <Button variant="ghost" size="icon" className="h-10 w-10 [&_svg]:size-5" onClick={() => rf.fitView({ padding: 0.2, duration: 300 })} title="Fit to screen (F)" aria-label="Fit to screen"><Maximize /></Button>
             <span className="mx-1 h-5 w-px bg-line" />
             <button onClick={() => { setBottomOpen(true); setBottomTab("problems"); }} className={cn("flex items-center gap-1 rounded-md px-2 py-1 text-xs", errorCount ? "text-bad" : warnCount ? "text-warn" : "text-ok")} data-testid="problems-badge">
-              {errorCount ? <><AlertTriangle className="h-3.5 w-3.5" />{errorCount} problem{errorCount > 1 ? "s" : ""}</> : warnCount ? <><AlertTriangle className="h-3.5 w-3.5" />{warnCount} warning{warnCount > 1 ? "s" : ""}</> : <><CircleCheck className="h-3.5 w-3.5" />Ready to run</>}
+              {errorCount ? <><AlertTriangle className="h-3.5 w-3.5" />{errorCount} thing{errorCount > 1 ? "s" : ""} to fix</> : warnCount ? <><AlertTriangle className="h-3.5 w-3.5" />{warnCount} warning{warnCount > 1 ? "s" : ""}</> : <><CircleCheck className="h-3.5 w-3.5" />Ready to run</>}
             </button>
-            <Button variant="secondary" onClick={saveVersion} title="Save a version (Ctrl+S)"><Save />Save version</Button>
-            <Button variant="secondary" onClick={() => { setBottomOpen(true); setBottomTab("test"); }}><FlaskConical />Test</Button>
-            <Button onClick={async () => { await flushSave(); setPublishOpen(true); }} data-testid="publish-open"><Globe />Publish</Button>
+            <Button variant="secondary" onClick={saveVersion} title="Save a copy you can go back to (Ctrl+S)"><Save />Save a copy</Button>
+            <Button variant="secondary" onClick={() => { setBottomOpen(true); setBottomTab("test"); }}><FlaskConical />Try it</Button>
+            <Button onClick={async () => { await flushSave(); setPublishOpen(true); }} data-testid="publish-open"><Globe />Share</Button>
           </div>
         </header>
 
         {usesOllama && ollama && !ollama.available && (
-          <div className="flex items-center gap-2 border-b border-warn/30 bg-warn/10 px-4 py-1.5 text-xs text-warn">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-            <span>Your AI Model block uses a local model, but Ollama isn't running, so tests will fail. Install Ollama and run <code className="rounded bg-bg/60 px-1">ollama pull llama3.2</code>, or switch the block to “Document Quote Finder (no AI)”. <Link href="/settings" className="underline">How to set up</Link></span>
+          <div className="flex flex-wrap items-center gap-3 border-b border-warn/40 bg-warn/10 px-4 py-2 text-base">
+            <AlertTriangle className="h-5 w-5 shrink-0 text-warn" />
+            <span className="min-w-0 flex-1">Your AI can't think yet: the free AI program (Ollama) isn't on this computer. <a href="https://ollama.com/download" target="_blank" rel="noreferrer" className="underline">How to install it</a></span>
+            <Button size="sm" data-testid="use-quotes" onClick={() => {
+              commit(nodesRef.current.map((n) => (n.data.blockType === "ai_model" && n.data.config.provider === "ollama"
+                ? { ...n, data: { ...n.data, config: { ...n.data.config, provider: "quotes", model: "quote-finder" } } } : n)), edgesRef.current);
+              toast("ok", "Done. Your AI now answers by quoting your documents. Press Undo to go back.");
+            }}>Use the no-AI option instead</Button>
           </div>
         )}
 
@@ -502,7 +507,7 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
               )}
               {nodes.length === 0 && (
                 <div className="pointer-events-none absolute inset-0 grid place-items-center text-center text-sm text-muted">
-                  <div>Drag blocks here from the left, or ask The Architect to build something.</div>
+                  <div>Drag steps here from the left, or use “Ask for changes” on the right.</div>
                 </div>
               )}
             </div>
@@ -511,11 +516,11 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
             <div className={cn("shrink-0 border-t border-line bg-panel/70", bottomOpen ? "h-[300px]" : "h-10")}>
               <div className="flex h-10 items-center gap-2 border-b border-line px-3">
                 <Tabs<BottomTab> className="w-[340px]" value={bottomTab} onChange={(t) => { setBottomTab(t); setBottomOpen(true); }} tabs={[
-                  { id: "test", label: "Test chat" },
-                  { id: "log", label: "Run log" },
-                  { id: "problems", label: `Problems${errorCount + warnCount ? ` (${errorCount + warnCount})` : ""}` },
+                  { id: "test", label: "Try it" },
+                  { id: "log", label: "What happened" },
+                  { id: "problems", label: `To fix${errorCount + warnCount ? ` (${errorCount + warnCount})` : ""}` },
                 ]} />
-                <button className="ml-auto text-muted hover:text-fg" onClick={() => setBottomOpen((o) => !o)} aria-label={bottomOpen ? "Collapse panel" : "Expand panel"}>{bottomOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}</button>
+                <button className="ml-auto text-muted hover:text-fg" onClick={() => setBottomOpen((o) => !o)} aria-label={bottomOpen ? "Hide this panel" : "Show this panel"}>{bottomOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}</button>
               </div>
               {bottomOpen && (
                 <div className="h-[260px]">
@@ -532,14 +537,14 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
             {/* Panel tabs: equal-width, full-row buttons with an icon above a readable label. */}
             <div className="grid shrink-0 grid-cols-5 border-b border-line" role="tablist">
               {([
-                ["block", "Block", SlidersHorizontal],
-                ["architect", "Architect", MessagesSquare],
-                ["knowledge", "Knowledge", BookOpen],
-                ["tests", "Tests", FlaskConical],
-                ["versions", "Versions", History],
+                ["block", "This step", SlidersHorizontal],
+                ["architect", "Ask", MessagesSquare],
+                ["knowledge", "Documents", BookOpen],
+                ["tests", "Checks", FlaskConical],
+                ["versions", "History", History],
               ] as const).map(([id, label, Icon]) => (
                 <button key={id} role="tab" aria-selected={rightTab === id} onClick={() => setRightTab(id)}
-                  className={cn("flex h-16 flex-col items-center justify-center gap-1.5 border-b-2 text-[13px] font-medium transition-colors",
+                  className={cn("flex h-16 flex-col items-center justify-center gap-1.5 border-b-2 text-base font-medium transition-colors",
                     rightTab === id ? "border-accent bg-card text-fg" : "border-transparent text-muted hover:bg-line/40 hover:text-fg")}>
                   <Icon className="h-[18px] w-[18px]" />{label}
                 </button>
@@ -573,7 +578,7 @@ function ConnectPicker({ blocks, at, onPick, onClose }: { blocks: BlockDef[]; at
   }, [onClose]);
   return (
     <div className="fixed z-50 w-56 rounded-md border border-line bg-card p-1 shadow-lg" style={{ left: Math.min(at.x, window.innerWidth - 250), top: Math.min(at.y, window.innerHeight - 340) }} data-testid="connect-picker">
-      <div className="px-2 pb-1 pt-1 text-[11px] text-muted">Add a connected block</div>
+      <div className="px-2 pb-1 pt-1 text-xs text-muted">Add the next step</div>
       {blocks.filter((b) => b.accepts_input).map((b) => {
         const Icon = iconFor(b.icon);
         return (
@@ -587,7 +592,7 @@ function ConnectPicker({ blocks, at, onPick, onClose }: { blocks: BlockDef[]; at
 }
 
 function RunLog({ run, onSelect }: { run: Execution | null; onSelect: (id: string) => void }) {
-  if (!run) return <p className="p-6 text-center text-sm text-muted">Run a test to see what each block did.</p>;
+  if (!run) return <p className="p-6 text-center text-sm text-muted">Try a question to see what each step did.</p>;
   return (
     <div className="h-full overflow-y-auto p-3 text-sm">
       <div className="mb-2 text-xs text-muted">Run {run.id.slice(0, 8)} · {ms(run.duration_ms)} · {run.prompt_tokens + run.completion_tokens} tokens</div>
@@ -597,7 +602,7 @@ function RunLog({ run, onSelect }: { run: Execution | null; onSelect: (id: strin
             <tr key={i} className={cn("cursor-pointer border-b border-line/60 hover:bg-line/30", l.status === "skipped" && "opacity-50")} onClick={() => onSelect(l.node_id)}>
               <td className="w-6 py-1.5"><span className={l.status === "succeeded" ? "text-ok" : l.status === "failed" ? "text-bad" : l.status === "paused" ? "text-warn" : "text-muted"}>●</span></td>
               <td className="w-40 font-medium">{l.label}</td>
-              <td className="text-muted">{l.message}{l.output_preview && <div className="mt-0.5 line-clamp-2 font-mono text-[11px] text-fg/70">{l.output_preview}</div>}{l.error?.details && <div className="mt-0.5 font-mono text-[11px] text-bad/80">{l.error.details}</div>}</td>
+              <td className="text-muted">{l.message}{l.output_preview && <div className="mt-0.5 line-clamp-2 font-mono text-xs text-fg/70">{l.output_preview}</div>}{l.error?.details && <div className="mt-0.5 font-mono text-xs text-bad/80">{l.error.details}</div>}</td>
               <td className="w-16 text-right text-muted">{ms(l.duration_ms)}</td>
             </tr>
           ))}
@@ -608,7 +613,7 @@ function RunLog({ run, onSelect }: { run: Execution | null; onSelect: (id: strin
 }
 
 function Problems({ issues, nodes, onSelect }: { issues: Issue[]; nodes: BlockNode[]; onSelect: (id: string) => void }) {
-  if (!issues.length) return <p className="flex items-center justify-center gap-2 p-6 text-sm text-ok"><CircleCheck className="h-4 w-4" />No problems. Your workflow is ready to run.</p>;
+  if (!issues.length) return <p className="flex items-center justify-center gap-2 p-6 text-sm text-ok"><CircleCheck className="h-4 w-4" />Nothing to fix. Your AI is ready.</p>;
   const label = (id?: string | null) => nodes.find((n) => n.id === id)?.data.label;
   return (
     <ul className="h-full space-y-1.5 overflow-y-auto p-3">

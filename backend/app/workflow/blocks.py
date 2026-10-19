@@ -95,8 +95,8 @@ class InputConfig(_Cfg):
 
 
 class InputBlock(Block):
-    type, label, category, icon, color = "input", "Input", "Basics", "MessageSquare", "#5b84a8"
-    summary = "Where your agent receives a message from a person."
+    type, label, category, icon, color = "input", "Incoming message", "Basics", "MessageSquare", "#5b84a8"
+    summary = "The message a person sends to your AI."
     config_model = InputConfig
     accepts_input = False
     fields = [
@@ -134,8 +134,8 @@ class PromptConfig(_Cfg):
 
 
 class PromptBlock(Block):
-    type, label, category, icon, color = "prompt", "Prompt", "Basics", "ScrollText", "#8a7f6e"
-    summary = "The instructions that tell your AI how to behave."
+    type, label, category, icon, color = "prompt", "Instructions", "Basics", "ScrollText", "#8a7f6e"
+    summary = "Tells your AI who it is and how to behave."
     config_model = PromptConfig
     template_keys = ["system_prompt", "instructions", "user_prompt"]
     fields = [
@@ -184,21 +184,21 @@ class AIModelConfig(_Cfg):
 
 
 class AIModelBlock(Block):
-    type, label, category, icon, color = "ai_model", "AI Model", "AI", "Cpu", "#3f8f84"
-    summary = "This is the brain of your agent. It reads the instructions and writes a reply."
+    type, label, category, icon, color = "ai_model", "AI brain", "AI", "Cpu", "#3f8f84"
+    summary = "Reads the instructions and writes the answer."
     config_model = AIModelConfig
     template_keys = ["role", "task"]
     fields = [
-        field_def("provider", "Provider", "provider", "Where this block's AI runs. Each AI Model block can use a different one."),
-        field_def("model", "Model", "model", "Which AI model this block uses. Pick a different one per block if you like."),
+        field_def("provider", "Which AI brain", "provider", "Where the thinking happens. Each AI brain step can use a different one."),
+        field_def("model", "AI brain version", "model", "Which downloaded AI brain to use."),
         field_def("role", "This agent's job (optional)", "textarea",
                   "Give this block its own personality, e.g. 'You are a strict proofreader.' "
                   "Leave empty to use the Prompt block's instructions."),
         field_def("task", "What this agent works on (optional)", "textarea",
                   "E.g. 'Check this reply for mistakes: {{ai_response}}'. Leave empty to use the Prompt block's message."),
-        field_def("temperature", "Creativity", "slider", "Low = focused and consistent. High = more creative.",
+        field_def("temperature", "How creative", "slider", "Low = focused and consistent. High = more creative.",
                   min=0, max=1.5, step=0.1),
-        field_def("max_tokens", "Maximum reply length", "number", "Roughly 1 token ≈ ¾ of a word.", min=16, max=4096),
+        field_def("max_tokens", "Longest answer", "number", "Bigger number = longer answers allowed.", min=16, max=4096),
         field_def("use_knowledge", "Use document knowledge", "boolean",
                   "Give the AI the passages found by a Knowledge Search block."),
         field_def("use_history", "Remember the conversation", "boolean", "Include earlier messages in the chat."),
@@ -314,8 +314,8 @@ def evaluate_condition(value: str, operator: str, compare: str, case_sensitive: 
 
 
 class ConditionBlock(Block):
-    type, label, category, icon, color = "condition", "Condition", "Logic", "GitBranch", "#b08a3e"
-    summary = "Sends the conversation down one of two paths based on a simple rule."
+    type, label, category, icon, color = "condition", "If / Otherwise", "Choices", "GitBranch", "#b08a3e"
+    summary = "Checks something, then goes one way or the other."
     config_model = ConditionConfig
     out_handles = ["true", "false"]
     required_var_keys = ["value_source"]
@@ -368,8 +368,8 @@ def strip_markdown(text: str) -> str:
 
 
 class OutputBlock(Block):
-    type, label, category, icon, color = "output", "Output", "Basics", "Send", "#5d8f5f"
-    summary = "What your agent sends back to the person."
+    type, label, category, icon, color = "output", "Reply", "Basics", "Send", "#5d8f5f"
+    summary = "The answer the person gets back."
     config_model = OutputConfig
     out_handles = []
     required_var_keys = ["content_source"]
@@ -403,8 +403,8 @@ class KnowledgeConfig(_Cfg):
 
 
 class KnowledgeSearchBlock(Block):
-    type, label, category, icon, color = "knowledge_search", "Knowledge Search", "Knowledge", "BookOpen", "#4f8a9c"
-    summary = "Looks through your uploaded documents for passages that answer the question."
+    type, label, category, icon, color = "knowledge_search", "Look in documents", "Your documents", "BookOpen", "#4f8a9c"
+    summary = "Finds the parts of your documents that answer the question."
     config_model = KnowledgeConfig
     required_var_keys = ["query_source"]
     fields = [
@@ -437,8 +437,8 @@ class ApprovalConfig(_Cfg):
 
 
 class HumanApprovalBlock(Block):
-    type, label, category, icon, color = "human_approval", "Human Approval", "Logic", "UserCheck", "#a8676f"
-    summary = "Pauses and waits for you to approve or reject before continuing."
+    type, label, category, icon, color = "human_approval", "Ask me first", "Choices", "UserCheck", "#a8676f"
+    summary = "Waits for you to say yes or no before answering."
     config_model = ApprovalConfig
     fields = [
         field_def("reviewer_note", "Note for the reviewer", "textarea"),
@@ -478,8 +478,8 @@ class TransformConfig(_Cfg):
 
 
 class TextTransformBlock(Block):
-    type, label, category, icon, color = "text_transform", "Text Transformation", "Logic", "Type", "#7a7f5a"
-    summary = "Changes text with a simple rule, like adding a signature or shortening it."
+    type, label, category, icon, color = "text_transform", "Change the text", "Choices", "Type", "#7a7f5a"
+    summary = "Shortens the answer or adds something to it, like a signature."
     config_model = TransformConfig
     required_var_keys = ["source"]
     template_keys = ["text"]

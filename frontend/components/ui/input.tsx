@@ -2,10 +2,10 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const base =
-  "w-full rounded-md border border-line bg-card px-3 text-sm text-fg placeholder:text-muted/70 transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60";
+  "w-full rounded-md border border-line bg-card px-3.5 text-base text-fg placeholder:text-muted transition-colors focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent disabled:opacity-60";
 
 export const Input = React.forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, ...p }, ref) => <input ref={ref} className={cn(base, "h-9", className)} {...p} />
+  ({ className, ...p }, ref) => <input ref={ref} className={cn(base, "h-12", className)} {...p} />
 );
 Input.displayName = "Input";
 
@@ -15,12 +15,12 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTML
 Textarea.displayName = "Textarea";
 
 export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
-  ({ className, ...p }, ref) => <select ref={ref} className={cn(base, "h-9 pr-8", className)} {...p} />
+  ({ className, ...p }, ref) => <select ref={ref} className={cn(base, "h-12 pr-8", className)} {...p} />
 );
 Select.displayName = "Select";
 
 export function Label({ className, ...p }: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return <label className={cn("mb-1.5 block text-xs font-medium text-fg/90", className)} {...p} />;
+  return <label className={cn("mb-1.5 block text-base font-medium text-fg", className)} {...p} />;
 }
 
 export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
@@ -31,9 +31,9 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={cn("relative h-5 w-9 shrink-0 rounded-full transition", checked ? "bg-accent" : "bg-line")}
+      className={cn("relative h-7 w-12 shrink-0 rounded-full transition", checked ? "bg-accent" : "bg-line")}
     >
-      <span className={cn("absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all", checked ? "left-[18px]" : "left-0.5")} />
+      <span className={cn("absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all", checked ? "left-6" : "left-1")} />
     </button>
   );
 }
