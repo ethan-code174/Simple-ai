@@ -29,8 +29,8 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
       fd.append("file", f);
       try {
         const d = await api<Doc>(`/api/agents/${agentId}/documents`, { method: "POST", body: fd });
-        toast(d.status === "ready" ? "ok" : "error", d.status === "ready" ? `${d.filename} is ready (${d.chunk_count} sections)` : `${d.filename}: ${d.error}`);
-      } catch (e: any) { toast("error", `${f.name}: ${e.message}`); }
+        toast(d.status === "ready" ? "ok" : "error", d.status === "ready" ? `${d.filename} is ready. Your AI can use it now.` : `We couldn't read ${d.filename}. Please try a PDF or text file.`);
+      } catch { toast("error", `We couldn't add ${f.name}. Please try a PDF or text file under 10 MB.`); }
     }
     setUploading(false);
     load();
@@ -38,19 +38,19 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-4">
-      <h3 className="font-semibold">Upload what your AI needs to know</h3>
-      <p className="mt-1 text-xs text-muted">PDF, TXT or Markdown files: price lists, FAQs, policies, opening hours. Only this agent can see them.</p>
-      {!hasKnowledgeBlock && <p className="mt-3 rounded-lg bg-warn/10 px-3 py-2 text-xs text-warn">This workflow has no Knowledge Search block, so it won't use these documents yet. Ask The Architect to “add document search”.</p>}
+      <h3 className="text-lg font-semibold">Your documents</h3>
+      <p className="mt-1 text-base text-muted">Add things your AI should know, like price lists, common questions or opening hours. Only this AI can read them.</p>
+      {!hasKnowledgeBlock && <p className="mt-3 rounded-lg bg-warn/10 px-3 py-2 text-base text-warn">Your AI won't read these documents yet. Go to &quot;Ask for changes&quot; and type: “look in my documents”.</p>}
       <button
         onDragOver={(e) => { e.preventDefault(); setDrag(true); }}
         onDragLeave={() => setDrag(false)}
         onDrop={(e) => { e.preventDefault(); setDrag(false); upload(e.dataTransfer.files); }}
         onClick={() => fileRef.current?.click()}
-        className={`mt-4 flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed p-6 text-sm transition ${drag ? "border-accent bg-accent/10" : "border-line hover:border-accent/50"}`}
+        className={`mt-4 flex flex-col items-center gap-2 rounded-2xl border-2 border-dashed p-6 text-base transition ${drag ? "border-accent bg-accent/10" : "border-line hover:border-accent/50"}`}
       >
         {uploading ? <Spinner className="h-6 w-6 text-accent" /> : <UploadCloud className="h-7 w-7 text-accent" />}
-        <span>{uploading ? "Reading your file…" : "Drop files here or click to upload"}</span>
-        <span className="text-xs text-muted">Up to 10 MB each</span>
+        <span>{uploading ? "Reading your file…" : "Click here to add a document"}</span>
+        <span className="text-sm text-muted">PDF or text files, up to 10 MB each. You can also drag files here.</span>
       </button>
       <input ref={fileRef} type="file" multiple accept=".pdf,.txt,.md,.markdown" className="hidden" data-testid="doc-upload" onChange={(e) => { upload(e.target.files); e.target.value = ""; }} />
 
@@ -59,35 +59,35 @@ export function KnowledgePanel({ agentId, hasKnowledgeBlock }: { agentId: string
           <div key={d.id} className="rounded-xl border border-line p-3">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 shrink-0 text-muted" />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium">{d.filename}</span>
-              {d.status === "ready" ? <Badge tone="ok">Ready</Badge> : d.status === "failed" ? <Badge tone="bad">Failed</Badge> : <Badge>Processing</Badge>}
+              <span className="min-w-0 flex-1 truncate text-base font-medium">{d.filename}</span>
+              {d.status === "ready" ? <Badge tone="ok">Ready</Badge> : d.status === "failed" ? <Badge tone="bad">Couldn't read it</Badge> : <Badge>Reading…</Badge>}
             </div>
-            <div className="mt-1 flex items-center justify-between text-xs text-muted">
-              <span>{(d.size_bytes / 1024).toFixed(0)} KB · {d.chunk_count} sections · {d.index_method === "keyword" ? "keyword search" : d.index_method}</span>
+            <div className="mt-1 flex items-center justify-between text-sm text-muted">
+              <details><summary className="cursor-pointer">More details</summary><span>{(d.size_bytes / 1024).toFixed(0)} KB · {d.chunk_count} parts · {d.index_method === "keyword" ? "finds matching words" : "finds matching meaning"}</span></details>
               <span className="flex gap-1">
-                <button title="Re-read file" aria-label="Reindex" onClick={async () => { await api(`/api/documents/${d.id}/reindex`, { method: "POST" }); load(); toast("ok", "Re-indexed"); }} className="rounded p-1 hover:bg-line/60"><RefreshCw className="h-3.5 w-3.5" /></button>
-                <button title="Delete" aria-label="Delete document" onClick={async () => { await api(`/api/documents/${d.id}`, { method: "DELETE" }); load(); }} className="rounded p-1 hover:bg-line/60 hover:text-bad"><Trash2 className="h-3.5 w-3.5" /></button>
+                <button title="Read this document again" aria-label="Read this document again" onClick={async () => { await api(`/api/documents/${d.id}/reindex`, { method: "POST" }); load(); toast("ok", "Done. The document was read again."); }} className="rounded p-2 hover:bg-line/60"><RefreshCw className="h-5 w-5" /></button>
+                <button title="Delete this document" aria-label="Delete this document" onClick={async () => { if (!window.confirm(`Delete “${d.filename}”? Your AI will stop using it.`)) return; await api(`/api/documents/${d.id}`, { method: "DELETE" }); load(); }} className="rounded p-2 hover:bg-line/60 hover:text-bad"><Trash2 className="h-5 w-5" /></button>
               </span>
             </div>
-            {d.error && <p className="mt-1 text-xs text-bad">{d.error}</p>}
+            {d.error && <p className="mt-1 text-sm text-bad">We couldn't read this document. Try deleting it and adding it again, or use a different file.</p>}
           </div>
         ))}
-        {docs && docs.length === 0 && <p className="py-4 text-center text-xs text-muted">No documents yet.</p>}
+        {docs && docs.length === 0 && <div className="py-4 text-center"><p className="text-base text-muted">No documents yet. Add one so your AI knows about your business.</p><Button size="lg" className="mt-3" onClick={() => fileRef.current?.click()}><UploadCloud />Add a document</Button></div>}
       </div>
 
       {docs && docs.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted">Try a search</h4>
+          <h4 className="text-lg font-semibold">See what your AI would find</h4>
           <form className="mt-2 flex gap-2" onSubmit={async (e) => { e.preventDefault(); if (q.trim()) setResults(await api(`/api/agents/${agentId}/knowledge/search`, { method: "POST", json: { query: q } })); }}>
-            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="e.g. opening hours" />
-            <Button size="icon" className="h-9 w-9" variant="secondary" aria-label="Search"><Search /></Button>
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="For example: opening hours" aria-label="Words to look for" />
+            <Button variant="secondary" aria-label="Look"><Search />Look</Button>
           </form>
-          {results && (results.length === 0 ? <p className="mt-2 text-xs text-muted">Nothing matched. Your agent would say it doesn't know.</p> : (
+          {results && (results.length === 0 ? <p className="mt-2 text-base text-muted">Nothing found. Your AI would say it doesn't know.</p> : (
             <div className="mt-2 space-y-2">{results.map((r) => (
-              <div key={r.chunk_id} className="rounded-lg bg-bg/60 p-2.5 text-xs"><div className="mb-1 font-medium text-accent">{r.source_label}</div><p className="line-clamp-4 text-muted">{r.content}</p></div>
+              <div key={r.chunk_id} className="rounded-lg bg-bg/60 p-3 text-base"><div className="mb-1 font-medium text-accent">{r.source_label}</div><p className="line-clamp-4 text-muted">{r.content}</p></div>
             ))}</div>
           ))}
-          <p className="mt-3 text-xs text-muted">Search uses keyword matching (BM25). If Ollama has <code>nomic-embed-text</code>, new uploads also get meaning-based search.</p>
+          <details className="mt-3 text-sm text-muted"><summary className="cursor-pointer">More details</summary><p className="mt-1">Your AI looks for matching words. If the free AI program (Ollama) has <code>nomic-embed-text</code>, new documents can also be searched by meaning.</p></details>
         </div>
       )}
     </div>

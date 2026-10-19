@@ -88,14 +88,14 @@ export default function Dashboard() {
                 <ul className="space-y-3">
                   {data.recent_activity.map((r) => (
                     <li key={r.id} className="flex items-start gap-3 text-base">
-                      {r.status === "succeeded" ? <CircleCheck className="mt-0.5 h-4 w-4 shrink-0 text-ok" /> : r.status === "failed" ? <CircleX className="mt-0.5 h-4 w-4 shrink-0 text-bad" /> : <Clock className="mt-0.5 h-4 w-4 shrink-0 text-warn" />}
+                      {r.status === "succeeded" ? <CircleCheck className="mt-1 h-5 w-5 shrink-0 text-ok" /> : r.status === "failed" ? <CircleX className="mt-1 h-5 w-5 shrink-0 text-bad" /> : <Clock className="mt-1 h-5 w-5 shrink-0 text-warn" />}
                       <div className="min-w-0 flex-1">
-                        <Link href={`/agents/${r.agent_id}`} className="font-medium hover:text-accent">{r.agent_name}</Link>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link href={`/agents/${r.agent_id}`} className="font-medium hover:text-accent">{r.agent_name}</Link>
+                          <Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
+                        </div>
                         <p className="truncate text-muted">“{r.message}”</p>
-                      </div>
-                      <div className="text-right text-sm text-muted">
-                        <Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
-                        <div className="mt-1">{r.source === "public" ? "From a visitor" : r.source === "test" ? "A check" : "You tried it"} · {timeAgo(r.created_at)}</div>
+                        <p className="text-sm text-muted">{r.source === "public" ? "From a visitor" : r.source === "test" ? "A check" : "You tried it"} · {timeAgo(r.created_at)}</p>
                       </div>
                     </li>
                   ))}

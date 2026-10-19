@@ -28,7 +28,7 @@ export default function PublicChat({ params }: { params: Promise<{ slug: string 
         try {
           const r = await api(`/api/public/${slug}/runs/${m.pending!.runId}?token=${m.pending!.token}`);
           if (r.status !== "waiting_approval") {
-            setMsgs((all) => [...all.map((x, j) => (j === i ? { ...x, pending: undefined } : x)), { role: "assistant", text: r.reply ?? (r.error ? "Sorry, I couldn't answer that. Please try asking again." : "Sorry, I couldn't answer that. Please try asking again."), sources: r.sources, error: !!r.error }]);
+            setMsgs((all) => [...all.map((x, j) => (j === i ? { ...x, pending: undefined } : x)), { role: "assistant", text: r.reply ?? "Sorry, I couldn't answer that. Please try asking again.", sources: r.sources, error: !!r.error }]);
           }
         } catch {}
       }

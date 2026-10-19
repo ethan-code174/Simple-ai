@@ -10,7 +10,7 @@ test("a beginner makes and shares an AI with the step-by-step guide", async ({ p
   await page.getByLabel("Your name").fill("Margaret");
   await page.getByLabel("Email").fill(`guided+${Date.now()}@example.com`);
   await page.getByLabel("Password").fill("supersecret1");
-  await page.getByRole("button", { name: /Create (my )?account/ }).click();
+  await page.getByRole("button", { name: "Sign up" }).click();
 
   // Step 1: what should it help with?
   await expect(page.getByRole("heading", { name: "What should your AI help with?" })).toBeVisible();

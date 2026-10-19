@@ -10,7 +10,10 @@ Results on 2026-10-15: **53 passed on SQLite and 53 passed on Postgres 16** (`AI
 
 **Mocks are labelled.** No AI model is available in CI, so tests use `MockProvider`, whose replies start with `[TEST MOCK — not AI]`, and a fake HTTP transport for the Ollama adapter. The mock provider only exists when `AIF_ENABLE_TEST_PROVIDER=true`.
 
-## End-to-end: beginner flow (Playwright)
+## End-to-end (Playwright)
+`frontend/e2e/guided-start.spec.ts`: the 5-step guide a beginner uses (sign up → pick a card → name it → upload a document → no-AI fallback → try it → share it → visitor opens the link).
+
+### Advanced editor flow
 `frontend/e2e/beginner-flow.spec.ts`: sign up → describe → generated workflow → switch model → upload a document → test run with sources → Architect edit with diff → undo/redo → save version → publish → visitor chats on the public page → dashboard.
 
 ```bash

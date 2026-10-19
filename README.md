@@ -10,6 +10,8 @@ AI Factory is a no-code platform where complete beginners create, test and publi
 
 ## What a beginner can do
 
+The app is designed to be usable by someone who has never used software like this: an 18px base text size, large buttons, light mode, plain words ("steps", "AI brain", "Share") and a **5-step guide** after sign-up (what it should help with → name it → add documents → try it → share it). The visual editor below is still there behind *Advanced: change the steps*.
+
 1. Create an account (built-in email + password).
 2. Describe an agent, e.g. *“Create an AI receptionist for my plumbing business that answers customer questions, reads my business documents, and collects booking requests.”*
 3. Get a validated visual workflow (Input → Knowledge Search → Prompt → AI Model → Output), with a plain-English explanation and an honest list of anything that can't be built yet.

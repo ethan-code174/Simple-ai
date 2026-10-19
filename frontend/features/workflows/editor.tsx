@@ -544,7 +544,7 @@ function EditorInner({ agentId, isNew }: { agentId: string; isNew: boolean }) {
                 ["versions", "History", History],
               ] as const).map(([id, label, Icon]) => (
                 <button key={id} role="tab" aria-selected={rightTab === id} onClick={() => setRightTab(id)}
-                  className={cn("flex h-16 flex-col items-center justify-center gap-1.5 border-b-2 text-base font-medium transition-colors",
+                  className={cn("flex h-16 flex-col items-center justify-center gap-1 border-b-2 text-sm font-medium transition-colors",
                     rightTab === id ? "border-accent bg-card text-fg" : "border-transparent text-muted hover:bg-line/40 hover:text-fg")}>
                   <Icon className="h-[18px] w-[18px]" />{label}
                 </button>
